@@ -25,40 +25,63 @@ global distance
 distance = 0
 velocity = 0
 
-# -*- coding: utf-8 -*-
-
 def calculate_velocity(rW, rB, wC, wA):
-    omega_B = (rW / (2 * rB)) * (wC - wA)
+    '''
+    Calculates the linear and angular velocities of the basketball.
 
+    rW: raidus of the wheels FIXME: is this right
+    rB: radius of the basketball
+    wC: angualr velocity of the first pair of wheels FIXME: is this right?
+    wA: angulart velocity of the second pair of wheels
+
+    return: array [linear velocity, angular velocity]
+    '''
+    omega_B = (rW / (2 * rB)) * (wC - wA)
     v_B = (rW / 2) * (wC + wA)
 
     return v_B, omega_B
 
 def change_parameters(distance):
+    '''
+    Populates the parameters section of the GUI. Gets values from the different sliders.
+
+    returns: the distance from the Hoopster to the basketball hoop
+    '''
+
+    # clear previous entries
     dis_lab2.clear()
     ang_lab2.clear()
     vel_lab2.clear()
     ang_vel_lab.clear()
     
+    # cannot have a negative distance to launch to
     if distance < 0:
         distance = 0
-        
-    velocity = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[0]
-    angular = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[1]
+
+    velocities =  calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)
+    velocity = velocities[0]
+    angular = velocities[1]
+
+    # populate the fields
     dis_lab2.append("Expected Distance: {:.2f} m".format(distance))
     ang_lab2.append("Launch Angle: " + str(launch_angle_value.value) + "°")
     vel_lab2.append("Velocity: {:.2f} m/s".format(velocity))
     ang_vel_lab.append("Angular Velocity: {:.2f} rad/s".format(angular))
     
 def run_main_menu():
+    '''
+    Hides this app and returns the main app page.
+    '''
     try:
         app.hide()
         sys.exit()
     except subprocess.CalledProcessError as e:
-        # print(f"Error running the script: {e}")
-        print("Error running the script: ", e)
+        print(f"Error running the script: {e}")
 
 def update_sliders():
+    '''
+    Updates the sliders.
+    '''
     if rpm1_value.value:
         slider_rpm1.value = int(rpm1_value.value)
     else:
@@ -79,25 +102,24 @@ def update_sliders():
     else:
         slider_launch_angle.value = 0
 
-    xdistance = update_graph()
-    change_parameters(xdistance)
+    # determines the distance from the Hoopster to the hoop by executing trajectory calculations
+    x_dist_to_center_of_hoop = update_graph()
+    change_parameters(x_dist_to_center_of_hoop)
 
 def adjust_hoopster():
-    """Handle the adjust button click event."""
+    '''
+    Handle the adjust button click event.
+    '''
     print("RPM 1:", slider_rpm1.value)
     print("RPM 2:", slider_rpm2.value)
     print("Azimuth:", slider_azimuth.value)
     print("Launch Angle:", slider_launch_angle.value)
-
-    # Send serial information/commands representing the values inputted from the slider
-    # transmitCommand(Command.CHANGE_MOTOR1_RPM, slider_rpm1.value)
-    # transmitCommand(Command.CHANGE_MOTOR2_RPM, slider_rpm2.value)
-    # transmitCommand(Command.CHANGE_AZIMUTH, 0, slider_azimuth.value)
-    # transmitCommand(Command.CHANGE_AIM, 0, slider_launch_angle.value)
-
     run_main_menu()
 
 def slider_changed(slider):
+    '''
+    Updates the variables asscoiated with the different sliders if the slider changed.
+    '''
     if slider == slider_rpm1:
         rpm1_value.value = str(slider_rpm1.value)
     elif slider == slider_rpm2:
@@ -106,15 +128,22 @@ def slider_changed(slider):
         azimuth_value.value = str(slider_azimuth.value)
     elif slider == slider_launch_angle:
         launch_angle_value.value = str(slider_launch_angle.value)
-        
-    xdistance = update_graph()
-    change_parameters(xdistance)
+
+    # determines the distance from the Hoopster to the hoop by executing trajectory calculations   
+    x_dist_to_center_of_hoop = update_graph()
+    change_parameters(x_dist_to_center_of_hoop)
 
 def update_graph():
+    '''
+    Updates the manual trajectory graph. Calls on the calculate manual function and passes the manually inputted
+    launch angle value and the manually inputted velocity value. Takes the returned array of x and y values plots the graph.
+    Adds a bar to represent the center of the hoop.
+
+    returns: x distance to the hoop.
+    '''
     velocity = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[0]
-    x, y, center = calculate_manual(int(launch_angle_value.value), velocity)
-    print(launch_angle_value.value)
-    print(velocity)
+    print("I AM UPDATING THE GRAPH: Launch Angle: ", launch_angle_value.value, " Velocity: ", velocity)
+    x, y, x_dist_to_center_of_hoop = calculate_manual(int(launch_angle_value.value), velocity)
 
     canvas.figure.clear()
 
@@ -123,8 +152,12 @@ def update_graph():
     ax.set_title('Trajectory', color='white', fontsize=16, fontweight='bold')  # Change title color, size, and weight
     ax.set_xlabel('x [m]', color='#cccccc', fontsize=15)  # Change X-label color and size
     ax.set_ylabel('y [m]', color='#cccccc', fontsize=15)  # Change Y-label color and size
-    ax.errorbar([center], [3.05], xerr=[0.2286], ecolor="orange")
-    distance = center
+
+    # Add legend and labels
+    ax.errorbar([x_dist_to_center_of_hoop], [3.05], xerr=[0.2286], ecolor="orange")
+    disp_str = "x = " + '{:.2f}'.format(x_dist_to_center_of_hoop)
+    ax.annotate(disp_str, xy= (x_dist_to_center_of_hoop, 3.05), xytext=(0.95, 0.95), textcoords='axes fraction', 
+             ha='right', va='top', fontsize=15, color="orange")
     
     # Set the x and y axis limits
     ax.set_xlim([0, 8])
@@ -147,7 +180,7 @@ def update_graph():
 
     canvas.draw()
     
-    return center
+    return x_dist_to_center_of_hoop
     
 
 app = App(

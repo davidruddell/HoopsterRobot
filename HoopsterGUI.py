@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+import sys
+print(sys.version)
 import subprocess
 import cv2
 from guizero import App, Text, Picture, PushButton, Box, Window
@@ -56,7 +60,8 @@ def on_closed(event=None):
     try:
         app.destroy()
     except Exception as e:
-        print(f"Error occurred: {e}")
+        # print(f"Error occurred: {e}")
+        print("Error occurred")
         
 # Function to handle a successful shot
 def success_shot():
@@ -100,7 +105,8 @@ def run_mobility_menu():
             # If the GUI already exists, just show it
             mobility_gui.show()
     except Exception as e:
-        print(f"Error running the script: {e}")
+        # print(f"Error running the script: {e}")
+        print("Error occurred")
     finally:
         app.show()
 
@@ -113,7 +119,8 @@ def run_manual_shot_menu():
         print("Parent script continues running...")
         app.show()
     except subprocess.CalledProcessError as e:
-        print(f"Error running the script: {e}")
+        # print(f"Error running the script: {e}")
+        print("Error occurred")
 
 
 
@@ -220,7 +227,8 @@ def run_calibration_screen():
         TRAJ_BOX_EXISTS = False
 
     except subprocess.CalledProcessError as e:
-        print(f"Error running the script: {e}")
+        # print(f"Error running the script: {e}")
+        print("Error occurred")
 
 def launchAngle_plusCal():
     global LAUNCH_ANG_CAL, launch_angle_cal_text
@@ -330,6 +338,7 @@ def set_launch():
     # with open("CV2/cvMain.py") as file:
     #     result = exec(file.read())
 
+    # what is X_GOAL?
     (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
 
 
@@ -610,6 +619,7 @@ dummy_button4.bg = "white"
 # dummy2 = Text(row8, grid=[0, 0], text="", align="left", bg="#2b2b2b", color="#c0c0c0")
 # dummy3 = Text(row9, grid=[0, 0], text="", align="left", bg="#2b2b2b", color="#c0c0c0")
 
+# FIXME: to be checked; diatance = distance to the the hoop; x distance = x intercept
 title_lab = Text(row7, grid=[0, 0], text="Parameters", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
 dis_lab = Text(row8, grid=[0, 0], text="Distance: ", align="left", color="#c0c0c0", bg="#2b2b2b")
 disx_lab = Text(row9, grid=[0, 0], text="X-Axis Distance: ", align="left", color="#c0c0c0", bg="#2b2b2b")

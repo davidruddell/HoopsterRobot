@@ -118,7 +118,7 @@ def calculate_auto(x_goal):
     print("Final angle" + str(radians_to_degrees(final_angle)))
     min_v = min(v_i_arr)
     index = v_i_arr.index(min_v)
-    return x_arr[index], y_arr[index], theta_arr[index], round(min_v,2)
+    return x_arr[index], y_arr[index], theta_arr[index], round(min_v,2) # supposed to give us the optimal shot but right now it is giving us the first index...
                     
 def get_rpm(v_b):
     omega_b = 6.76
