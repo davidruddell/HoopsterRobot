@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 from scipy.integrate import solve_ivp
 import math
@@ -18,31 +19,153 @@ y_goal = 3.05  # m
 
 
 def deriv(t, u):
+    '''
+    Defines the ODE that defines the motion of the basketball after being launched.
+    Returns the velocity in the x direction, the acceleration in the x direction, the
+    velocity in the y direction, and the acceleration in the y direction.
+    '''
+
+    # variables in the ODE
     x, v_x, y, v_y = u
     speed = np.hypot(v_x, v_y)
-    dv_x_dt = -k/m * speed * v_x
-    dv_y_dt = -k/m * speed * v_y - g
+
+    # first derivate we are solving for, x double dot = acceleration in x direction
+    dv_x_dt = -(k/m * speed * v_x) - (k/m * speed * v_y)
+
+    # second derivate we are solving for, y double dot = acceleration in y direction
+    dv_y_dt = -(k/m * speed * v_y) + (k/m * speed * v_x) - g
+
+    # returning x dot, x double dot, y dot, y double dot
     return v_x, dv_x_dt, v_y, dv_y_dt
-
-
-
 
 # Integrate up to tf unless we hit the target sooner.
 t0, tf = 0, 50
 
-
 def hit_target(t, u):
-    # We've hit the target if the y-coordinate is 0.
+    '''
+    Returns when u[2] y velocity = == 0. 
+    '''
     return u[2]
-# Stop the integration when we hit the target.
+
+# Stop the integration when we hit the target (when u[2] == 0)
 hit_target.terminal = True
-# We must be moving downwards (don't stop before we begin moving upwards!)
+
+# Continue the integration until the event function sign changes from positive to nehative
 hit_target.direction = -1
 
-
 def max_height(t, u):
+    '''
+    Returns when u[3] = y acceleration == 0
+    '''
     # The maximum height is obtained when the y-velocity is zero.
     return u[3]
+
+# FIXME: CURRENTLY NOT BEING CALLED ANYWHERE
+# def get_rpm(v_b):
+#     '''
+#     TODO
+#     '''
+#     omega_b = 5  # rad/s
+#     r_w = 0.15  # m
+#     r_b = 0.12065  # m
+#     omega_a = (v_b - omega_b * r_b) / r_w  # rad/s
+#     omega_c = omega_b * 2 * r_b / r_w + omega_a  # rad/s
+#     rpm_a = omega_a * 60 / (2 * math.pi)  # rpm
+#     rpm_c = omega_c  * 60 / (2 * math.pi) # rpm
+#     return rpm_a, rpm_c
+
+# FIXME: CURRENTLY NOT BEING CALLED ANYWHERE
+# def Focal_Length_Finder(measured_distance, real_width, width_in_rf_image):
+#     '''
+#     TODO
+#     '''
+#     # finding the focal length
+#     focal_length = (width_in_rf_image * measured_distance) / real_width
+#     return focal_length
+
+#theta degrees input in 
+def calculate_manual(theta_degrees, v_i):
+    '''
+    TODO
+    '''
+
+    theta = np.radians(theta_degrees)
+
+    # u0 = x_0, v_x_0, y_0, v_y_0
+    u0 = 0, v_i * np.cos(theta), 1, v_i * np.sin(theta)
+
+    # solv_ivp(function, time span, initial state)
+    soln = solve_ivp(deriv, (t0, tf), u0, dense_output=True, events=(hit_target, max_height))
+
+    # time array with 100 points from 0 to t_evens[0][0]
+    t = np.linspace(0, soln.t_events[0][0], 100)
+    print(soln)
+    sol = soln.sol(t)
+    x, y = sol[0], sol[2]
+
+    # Find the index of the maximum y value
+    max_y_idx = np.argmax(y)
+
+    # Get the x coordinate at the maximum y value
+    max_x = x[max_y_idx]
+
+    # Initialize x_at_y_3_05
+    x_at_y_3_05 = -100
+
+    # Try different thresholds
+    for threshold in [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]:
+        # Find the indices of the y-values that are closest to 3.05 in the range from max_x to the end
+        indices = np.where((x >= max_x) & (np.abs(y - 3.05) < threshold))[0]
+
+        # If there are no indices, continue to the next threshold
+        if len(indices) == 0:
+            continue
+
+        # If there are multiple indices, take the first one
+        if len(indices) > 1:
+            idx = indices[0]
+        else:
+            idx = indices[0]
+
+        # Use the index to get the corresponding x value
+        x_at_y_3_05 = x[idx]
+
+        # Break the loop as we found a value
+        break
+
+    return x, y, x_at_y_3_05
+
+# # distance from camera to hoop measured
+# # centimeter
+Known_distance = (457.2**2 + 305**2)**(1/2)
+
+# width of face in the real world or Object Plane
+# centimeter
+Known_width = 24.13
+
+##### I DON'T THINK WE EVER CALL THIS SCRIPT! I THINK WE JUST USE THE FUNCTIONS DEFINED IN THIS FILE...could be wrong
+# # Integrate up to tf unless we hit the target sooner.
+# t0, tf = 0, 50
+
+# # Stop the integration when we hit the target.
+# hit_target.terminal = True
+
+# # We must be moving downwards (don't stop before we begin moving upwards!)
+# hit_target.direction = -1
+
+# # distance from camera to hoop measured
+# # centimeter
+# Known_distance = (457.2**2 + 305**2)**(1/2)
+
+# # width of face in the real world or Object Plane
+# # centimeter
+# Known_width = 24.13
+
+
+
+
+
+
 
 
 
@@ -98,77 +221,3 @@ def max_height(t, u):
 #     min_v = min(v_i_arr)
 #     index = v_i_arr.index(min_v)
 #     return x_arr[index], y_arr[index], theta_arr[index], round(min_v, 2)
-
-
-
-
-def get_rpm(v_b):
-    omega_b = 5  # rad/s
-    r_w = 0.15  # m
-    r_b = 0.12065  # m
-    omega_a = (v_b - omega_b * r_b) / r_w  # rad/s
-    omega_c = omega_b * 2 * r_b / r_w + omega_a  # rad/s
-    rpm_a = omega_a * 60 / (2 * math.pi)  # rpm
-    rpm_c = omega_c  * 60 / (2 * math.pi) # rpm
-
-
-    return rpm_a, rpm_c
-
-
-#theta degrees input in 
-def calculate_manual(theta_degrees, v_i):
-    theta = np.radians(theta_degrees)
-    u0 = 0, v_i * np.cos(theta), 1, v_i * np.sin(theta)
-    soln = solve_ivp(deriv, (t0, tf), u0, dense_output=True, events=(hit_target, max_height))
-    t = np.linspace(0, soln.t_events[0][0], 100)
-    sol = soln.sol(t)
-    x, y = sol[0], sol[2]
-
-    # Find the index of the maximum y value
-    max_y_idx = np.argmax(y)
-
-    # Get the x coordinate at the maximum y value
-    max_x = x[max_y_idx]
-
-    # Initialize x_at_y_3_05
-    x_at_y_3_05 = -100
-
-    # Try different thresholds
-    for threshold in [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]:
-        # Find the indices of the y-values that are closest to 3.05 in the range from max_x to the end
-        indices = np.where((x >= max_x) & (np.abs(y - 3.05) < threshold))[0]
-
-        # If there are no indices, continue to the next threshold
-        if len(indices) == 0:
-            continue
-
-        # If there are multiple indices, take the first one
-        if len(indices) > 1:
-            idx = indices[0]
-        else:
-            idx = indices[0]
-
-        # Use the index to get the corresponding x value
-        x_at_y_3_05 = x[idx]
-
-        # Break the loop as we found a value
-        break
-
-    return x, y, x_at_y_3_05
-
-
-# distance from camera to hoop measured
-# centimeter
-Known_distance = (457.2**2 + 305**2)**(1/2)
-
-
-# width of face in the real world or Object Plane
-# centimeter
-Known_width = 24.13
-
-
-# focal length finder function
-def Focal_Length_Finder(measured_distance, real_width, width_in_rf_image):
-    # finding the focal length
-    focal_length = (width_in_rf_image * measured_distance) / real_width
-    return focal_length
