@@ -140,7 +140,7 @@ def solve_for_x_goal(hypot, y_ax):
 
 def main():
 
-    hypotenuse = itorch.main()
+    hypotenuse, disalignment = itorch.main()
 
     #if hoop not detected
     if (hypotenuse == -1):
@@ -149,7 +149,7 @@ def main():
     #solve for x-axis
     x_goal = solve_for_x_goal(hypotenuse, y_goal)
 
-
+    
 
     #x_goal = 4.57
     result = calculate_auto(x_goal)

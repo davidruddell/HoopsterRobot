@@ -49,6 +49,21 @@ def calculate_distance_to_rim(hoop_width_px, camera_fov_degrees_h, sensor_width_
 
     return distance_to_rim_m
 
+def calculate_distance_between_centers(hoop_centers_diff, distance_to_rim_m, hoop_width_px, sensor_width_mm, sensor_height_mm):
+    """
+    Calculates the distance in meters between the centers of the hoop and the image.
+    """
+    # Calculate the conversion factor from pixels to meters
+    pixel_to_meter_conversion = distance_to_rim_m * (sensor_width_mm / sensor_height_mm) / hoop_width_px
+
+    # Calculate the pixel distance between the centers of the hoop and the image
+    pixel_distance_between_centers = abs(hoop_centers_diff)
+
+    # Convert pixel distance to meters
+    distance_between_centers_m = pixel_distance_between_centers * pixel_to_meter_conversion
+
+    return distance_between_centers_m
+
 def calculate_angle_between_points(distance_between_points_px, fov_degrees_h, distance_to_center_m, sensor_width_mm, sensor_height_mm):
     """
     Calculates the angle between two points in the camera's field of view where the center
@@ -259,11 +274,13 @@ def main():
 
         distance_to_rim = calculate_distance_to_rim(hoop_width, camera_fov_degrees_h, sensor_width_mm, sensor_height_mm, known_rim_width_mm)
         print(f"The distance from the camera to the basketball rim is approximately {distance_to_rim:.2f} meters.")
-
+        
         #angle_between_points = calculate_angle_between_points(hoop_center_x, camera_fov_degrees_h, distance_to_rim, sensor_width_mm, sensor_height_mm)
         #print(f"The angle between the two points is approximately {angle_between_points:.2f} degrees.")
         print(distance_to_rim)
-        return distance_to_rim
+        disalignment = calculate_distance_between_centers(hoop_center_x, distance_to_rim,hoop_width, sensor_width_mm, sensor_height_mm)
+        
+        return distance_to_rim, disalignment
     else:
         # print("hitdaelse")
         return -1
