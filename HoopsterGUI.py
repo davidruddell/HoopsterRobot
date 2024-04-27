@@ -330,7 +330,7 @@ def set_launch():
     # with open("CV2/cvMain.py") as file:
     #     result = exec(file.read())
 
-    (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
+    (result, X_GOAL, HYPOTENUSE, RPM, AZIMUTH) = cvMain.main()
 
 
     #if hoop not found
@@ -354,6 +354,16 @@ def set_launch():
         rpm2_lab.clear()
         dis_lab.append("Shot Not Possible")
         return
+    
+    # Check Azmiuth information
+    while abs(AZIMUTH > 2):
+        # Assume 20 steps per pixel
+        if (AZIMUTH > 0):
+            print(f"Rotate Clockwise {20*abs(AZIMUTH)} steps")
+        else:
+            print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} steps")
+        # Rerun to check Azimuth disalignment
+        (result, X_GOAL, HYPOTENUSE, RPM, AZIMUTH) = cvMain.main()
 
     x_result, y_result, THETA_RESULT, V_RESULT = result
     

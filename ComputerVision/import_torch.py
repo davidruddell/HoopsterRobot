@@ -280,7 +280,7 @@ def main():
         print(distance_to_rim)
         disalignment = calculate_distance_between_centers(hoop_center_x, distance_to_rim,hoop_width, sensor_width_mm, sensor_height_mm)
         
-        return distance_to_rim, disalignment
+        return distance_to_rim, hoop_center_x
     else:
         # print("hitdaelse")
         return -1

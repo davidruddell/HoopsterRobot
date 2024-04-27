@@ -191,7 +191,8 @@ def main():
     print("Initial Velocity (v_i):", v_result)
     print("Required RPM 1:", rpm[0])
     print("Required RPM 2:", rpm[1])
-    return (result, x_goal, hypotenuse, rpm)
+    print("Disalignment Pixels:", disalignment)
+    return (result, x_goal, hypotenuse, rpm, disalignment)
 
 if __name__ == "__main__":
     main()
