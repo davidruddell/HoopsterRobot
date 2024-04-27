@@ -38,16 +38,12 @@ START_CHAR = '<'
 END_CHAR = '>'
 
 # Create a serial object
-try:
-    mySerial = serial.Serial('COM6')
-    mySerial.baudrate = 9600
-    mySerial.timeout = 0.01
-    mySerial.bytesize = 8
-    mySerial.parity = 'N'
-    mySerial.stopbits = 1
-except:
-    print("COM Port not available")
-
+mySerial = serial.Serial('COM6')
+mySerial.baudrate = 9600
+mySerial.timeout = 0.01
+mySerial.bytesize = 8
+mySerial.parity = 'N'
+mySerial.stopbits = 1
 
 def transmitCommand(command, intArg=0, floatArg=0.0):
     mySerial.write(START_CHAR.encode())
