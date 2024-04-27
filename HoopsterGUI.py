@@ -13,12 +13,19 @@ import math
 from CV2 import cvMain
 from ComputerVision import import_torch as itorch
 import serial
+import serial.tools.list_ports as port_list
 
-# try:
-#     ser = serial.Serial('COM6', 9600)
-#     print(f"Successfully connected to port {ser.port}.")
-# except:
-#     print(f"Error connecting to port: {e}")
+
+# Prints a list of available serial ports.
+ports = list(port_list.comports())
+for port in ports:
+    print(port.device)
+
+try:
+    ser = serial.Serial('/dev/cu.usbmodem11201', 9600)
+    print(f"Successfully connected to port {ser.port}.")
+except:
+    print(f"Error connecting to port: {e}")
 
 # Global variables
 SUCCESS = 0
@@ -720,14 +727,20 @@ def set_launch():
         rpm1_lab.clear()
         rpm2_lab.clear()
 
-        AZIMUTH = slider_azimuth.value
+        AZIMUTH = (slider_azimuth.value) / .003
 
         if (AZIMUTH > 0):
-            print(f"Rotate Clockwise {20*abs(AZIMUTH)} degrees")
-            # ser.write(bytes('5', 20*AZIMUTH))
+            print(f"Rotate Clockwise {AZIMUTH} steps")
+            data = f"{5}{' '}{AZIMUTH}\n"
+            print(data)
+            ser.write(data.encode())
+            time.sleep(0.1)
         else:
-            print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} degrees")
-            # ser.write(bytes('5', (-20)*AZIMUTH))
+            print(f"Rotate Counter-Clockwise {AZIMUTH} steps")
+            data = f"{5}{' '}{AZIMUTH}\n"
+            print(data)
+            ser.write(data.encode())
+            time.sleep(0.1)
 
         #slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
         THETA_DEGREES = slider_launch_angle.value
