@@ -494,9 +494,8 @@ def calculate_velocity(rW, rB, wC, wA):
     v_B = (rW / 2) * (wC + wA)
     return v_B, omega_B
 
-
 # Initialize the video capture
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 cap.set(3, 3840)
 cap.set(4, 2160)

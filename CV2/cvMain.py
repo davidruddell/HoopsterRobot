@@ -28,9 +28,9 @@ FREE_THROW_HEIGHT = 3.05                     # height of the basketball hoop at 
 CAMERA_HEIGHT = 1.08                         # height from the ground to the camera, m
 y_goal = (FREE_THROW_HEIGHT - CAMERA_HEIGHT) # distance from the Hoopster to the basketball hoop, m
 LAUNCH_ANGLE_LOWER = 60                      # lower bound for the possible launch angle
-LAUNCH_ANGLE_UPPER = 73                      # upper bound for the possible launch angle
-LAUNCH_VEL_LOWER = 5                         # lower bound for the possible launch velocity
-LAUNCH_VEL_UPPER = 15                        # upper bound for the possible launch velocity
+LAUNCH_ANGLE_UPPER = 62                    # upper bound for the possible launch angle
+LAUNCH_VEL_LOWER = 6                        # lower bound for the possible launch velocity
+LAUNCH_VEL_UPPER = 9                        # upper bound for the possible launch velocity
 TOLERANCE = .05                              # tolerance for the shot to be off from the center of the hoop
 
 
@@ -123,7 +123,7 @@ def solve_trajectory_ODE(theta_degrees, v_i):
     soln = solve_ivp(deriv, (t0, tf), initial_conditions, dense_output=True, events=(hit_target, max_height))
 
     # time array with 100 points from 0 to the time of the first event
-    print("t events", soln.t_events[0][0])
+    #print("t events", soln.t_events[0][0])
     t = np.linspace(0, soln.t_events[0][0], 100)
 
     # interpolates the soln at the time valn def above and gets the x and y pos vals at these times
@@ -141,10 +141,10 @@ def is_possible__successful_shot(sol, x):
     returns: boolean specifying whether these parameters create a successful shot
     '''
     # Find index of closest x value to target x
-    idx = np.abs(sol.t - x).argmin()
+    idx = np.abs(sol[0] - x).argmin()
 
     # Check if y distance at target x is within tolerance
-    actual_y = sol.y[2, idx]
+    actual_y = sol[2][idx]
     return abs(actual_y - FREE_THROW_HEIGHT) <= TOLERANCE
 
 def find_all_launch_angle_and_vel_solns(x_goal):
@@ -159,8 +159,8 @@ def find_all_launch_angle_and_vel_solns(x_goal):
     possible_solutions = []
     # get the ranges for the possible launch angles and velocity
     # TODO: what is the resolution of each...I can adjust the num' parameter to refelct this
-    theta_range_degrees = np.arrange(LAUNCH_ANGLE_LOWER, LAUNCH_ANGLE_UPPER, 0.00523599)
-    v_i_range = np.arrange(LAUNCH_VEL_LOWER, LAUNCH_VEL_UPPER, 0.021279104)
+    theta_range_degrees = np.arange(LAUNCH_ANGLE_LOWER, LAUNCH_ANGLE_UPPER, 0.00523599)
+    v_i_range = np.arange(LAUNCH_VEL_LOWER, LAUNCH_VEL_UPPER, 0.021279104)
 
     #  iterate through all possible values of launch angle = theta
     for theta_degrees in theta_range_degrees:
@@ -173,6 +173,8 @@ def find_all_launch_angle_and_vel_solns(x_goal):
             if (possible__successful_shot):
                 possible_solutions.append([sol, theta_degrees, v_i])
 
+    return possible_solutions
+
 def calculate_entry_angle(sol):
     '''
     Calculates the entry angle for a shot specified by a specific launch angle and launch
@@ -183,16 +185,16 @@ def calculate_entry_angle(sol):
     returns: entry_engle_degrees: the entry angle of the shot in degrees
     '''
     # Find the index of the point in the trajectory closest to y_target
-    idx = np.argmin(np.abs(sol.y[2] - FREE_THROW_HEIGHT))
+    idx = np.argmin(np.abs(sol[2] - FREE_THROW_HEIGHT))
 
     # Calculate the x-value when y = y_target
-    x_target = sol.y[0, idx]
+    x_target = sol[2][idx]
 
     # Find the index of the x-intercept (where y = 0)
-    idx_x_intercept = np.argmin(np.abs(sol.y[2]))
+    idx_x_intercept = np.argmin(np.abs(sol[2]))
 
     # Calculate the x-value at the x-intercept
-    x_intercept = sol.y[0, idx_x_intercept]
+    x_intercept = sol[2][idx_x_intercept]
 
     # Calculate the distance between the x-intercept and the x-value at y = y_target
     distance = np.abs(x_intercept - x_target)
@@ -209,11 +211,15 @@ def calculate_auto(x_goal):
 
     # determine which solution gives the best entry angle
     optimal_entry_angle = 0
+    print("iamhere!!!!!")
     best_sol = None 
     best_launch_angle_degrees = None
     best_launch_velocity = None
     for array in possible_solutions_array:
         cur_sol = array[0]
+        print("helloKATELYN!")
+        print(cur_sol)
+        print("helloKATELYN2!")
         cur_launch_angle_degrees = array[1]
         cur_launch_velocity = array[2]
         cur_entry_angle = calculate_entry_angle(cur_sol)
@@ -224,6 +230,8 @@ def calculate_auto(x_goal):
             best_launch_angle_degrees = cur_launch_angle_degrees
             best_launch_velocity = cur_launch_velocity
 
+    if (best_sol == None):
+        return (-2, -2, -2, -2)
     #      x vals,      y vals,      
     return best_sol[0], best_sol[2], best_launch_angle_degrees, best_launch_velocity
                     
@@ -269,7 +277,7 @@ def solve_for_x_goal(hypotenuse, y_goal):
     returns: x_goal: distance in the x direction from the Hoopster camera to the
             center of the basketball hoop
     '''
-    x_goal = math.sqrt(hypotenuse^2 - y_goal^2)
+    x_goal = math.sqrt(hypotenuse**2 - y_goal**2)
     return x_goal
 
 
