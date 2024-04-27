@@ -39,7 +39,8 @@ AUTO_SHOT = True
 
 AZIMUTH_CAL=0.00
 LAUNCH_ANG_CAL=0.00
-VELOCITY_CAL=0.00
+RPM1_CAL=0.00
+RPM2_CAL=0.00
 
 TRAJ_BOX_EXISTS = False
 CAL_BOX_EXISTS = False
@@ -470,7 +471,7 @@ def run_camera_screen():
     MANUAL_BOX_EXISTS = False
 
 def run_calibration_screen():
-    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, cal_box, graph_box, man_box, AZIMUTH_CAL, LAUNCH_ANG_CAL, VELOCITY_CAL, velocity_cal_text, azimuth_cal_text, launch_angle_cal_text
+    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, cal_box, graph_box, man_box, AZIMUTH_CAL, LAUNCH_ANG_CAL, RPM1_CAL, RPM2_CAL, rpm1_cal_text, rpm2_cal_text, azimuth_cal_text, launch_angle_cal_text
     AUTO_SHOT = True
 
     try:
@@ -485,32 +486,40 @@ def run_calibration_screen():
         cal_box = Box(box1, layout="grid", grid=[0, 0], width=round(3840*0.346), height=round(2160*0.358))
 
         launch_angle_cal_box = Box(cal_box, layout="grid", grid=[0, 0], width=1, height=1, align="top")
-        launchAngle_cal_image = Picture(launch_angle_cal_box, image="GUI/AngleLabel.png", grid=[0, 0], width=300, height=100)
+        launchAngle_cal_image = Picture(launch_angle_cal_box, image="GUI/launchAngle.png", grid=[0, 0], width=300, height=100)
         launchAngle_cal_add_button = PushButton(launch_angle_cal_box, text="+", command=launchAngle_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
         launch_angle_cal_text = Text(launch_angle_cal_box, text=LAUNCH_ANG_CAL, grid=[2, 0], color="white")
         launch_angle_subtract_button = PushButton(launch_angle_cal_box, text="-", command=launchAngle_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal1 = Box(cal_box, layout="grid", grid=[0, 1], width=1, height=100, align="top")
 
-        azimuth_box = Box(cal_box, layout="grid", grid=[0, 4], width=1, height=1, align="top")
-        azimuth_image = Picture(azimuth_box, image="GUI/AzimuthLabel.png", grid=[0, 0], width=300, height=100)
+        azimuth_box = Box(cal_box, layout="grid", grid=[0, 2], width=1, height=1, align="top")
+        azimuth_image = Picture(azimuth_box, image="GUI/azimuth.png", grid=[0, 0], width=300, height=100)
         azimuth_add_button = PushButton(azimuth_box, text="+", command=azimuth_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
         azimuth_cal_text = Text(azimuth_box, text=AZIMUTH_CAL, grid=[2, 0], color="white")
         azimuth_subtract_button = PushButton(azimuth_box, text="-", command=azimuth_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal2 = Box(cal_box, layout="grid", grid=[0, 3], width=1, height=100, align="top")
 
-        velocity_cal_box = Box(cal_box, layout="grid", grid=[0, 2], width=1, height=1, align="top")
-        velocity_cal_image = Picture(velocity_cal_box, image="GUI/VelocityLabel.png", grid=[0, 0], width=300, height=100)
-        velocity_cal_add_button = PushButton(velocity_cal_box, text="+", command=velocity_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
-        velocity_cal_text = Text(velocity_cal_box, text=str(VELOCITY_CAL), grid=[2, 0], color="white")
-        velocity_cal_subtract_button = PushButton(velocity_cal_box, text="-", command=velocity_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
+        rpm1_cal_box = Box(cal_box, layout="grid", grid=[1, 0], width=1, height=1, align="top")
+        rpm1_cal_image = Picture(rpm1_cal_box, image="GUI/rpm1.png", grid=[0, 0], width=300, height=100)
+        rpm1_cal_add_button = PushButton(rpm1_cal_box, text="+", command=rpm1_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
+        rpm1_cal_text = Text(rpm1_cal_box, text=str(RPM1_CAL), grid=[2, 0], color="white")
+        rpm1_cal_subtract_button = PushButton(rpm1_cal_box, text="-", command=rpm1_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal3 = Box(cal_box, layout="grid", grid=[0, 5], width=1, height=100, align="top")
 
-        apply_cal_button = PushButton(cal_box, text="Apply", image="GUI/Apply.png", command=apply_cal_press, grid=[0, 6], width=600, height=100)
+        rpm2_cal_box = Box(cal_box, layout="grid", grid=[1, 2], width=1, height=1, align="top")
+        rpm2_cal_image = Picture(rpm2_cal_box, image="GUI/rmp2.png", grid=[0, 0], width=300, height=100)
+        rpm2_cal_add_button = PushButton(rpm2_cal_box, text="+", command=rpm2_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
+        rpm2_cal_text = Text(rpm2_cal_box, text=str(RPM2_CAL), grid=[2, 0], color="white")
+        rpm2_cal_subtract_button = PushButton(rpm2_cal_box, text="-", command=rpm2_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
-        spacer_cal4 = Box(cal_box, layout="grid", grid=[0, 7], width=1, height=100, align="top")
+        spacer_cal3 = Box(cal_box, layout="grid", grid=[0, 7], width=1, height=100, align="top")
+
+        apply_cal_button = PushButton(cal_box, text="Apply", image="GUI/Apply.png", command=apply_cal_press, grid=[0, 8], width=600, height=100)
+
+        spacer_cal4 = Box(cal_box, layout="grid", grid=[0, 10], width=1, height=100, align="top")
 
         CAL_BOX_EXISTS = True
         TRAJ_BOX_EXISTS = False
@@ -543,17 +552,29 @@ def azimuth_minusCal():
     AZIMUTH_CAL = round(AZIMUTH_CAL, 1)
     azimuth_cal_text.value = str(AZIMUTH_CAL)
 
-def velocity_plusCal():
-    global VELOCITY_CAL, velocity_cal_text
-    VELOCITY_CAL += 0.1
-    VELOCITY_CAL = round(VELOCITY_CAL, 1)
-    velocity_cal_text.value = str(VELOCITY_CAL)
+def rpm1_plusCal():
+    global RPM1_CAL, rpm1_cal_text
+    RPM1_CAL += 0.1
+    RPM1_CAL = round(RPM1_CAL, 1)
+    rpm1_cal_text.value = str(RPM1_CAL)
 
-def velocity_minusCal():
-    global VELOCITY_CAL, velocity_cal_text
-    VELOCITY_CAL -= 0.1
-    VELOCITY_CAL = round(VELOCITY_CAL, 1)
-    velocity_cal_text.value = str(VELOCITY_CAL)
+def rpm1_minusCal():
+    global RPM1_CAL, rpm1_cal_text
+    RPM1_CAL -= 0.1
+    RPM1_CAL = round(RPM1_CAL, 1)
+    rpm1_cal_text.value = str(RPM1_CAL)
+
+def rpm2_plusCal():
+    global RPM2_CAL, rpm2_cal_text
+    RPM2_CAL += 0.1
+    RPM2_CAL = round(RPM2_CAL, 1)
+    rpm2_cal_text.value = str(RPM2_CAL)
+
+def rpm2_minusCal():
+    global RPM2_CAL, rpm2_cal_text
+    RPM2_CAL -= 0.1
+    RPM2_CAL = round(RPM2_CAL, 1)
+    rpm2_cal_text.value = str(RPM2_CAL)
 
 def apply_cal_press():
     global cal_box, CAL_BOX_EXISTS
@@ -561,11 +582,13 @@ def apply_cal_press():
     cal_box.destroy()
 
     angCal_lab.clear()
-    velCal_lab.clear()
+    rpm1Cal_lab.clear()
+    rpm2Cal_lab.clear()
     azimuthCal_lab.clear()
 
     angCal_lab.append("Launch Angle: " + str(cal_symbol(LAUNCH_ANG_CAL)) + str(LAUNCH_ANG_CAL) + "°")
-    velCal_lab.append("Velocity: " + str(cal_symbol(VELOCITY_CAL)) + str(VELOCITY_CAL) + "m/s")
+    rpm1Cal_lab.append("RPM Front Wheels: " + str(cal_symbol(RPM1_CAL)) + str(RPM1_CAL))
+    rpm2Cal_lab.append("RPM Rear Wheels: " + str(cal_symbol(RPM2_CAL)) + str(RPM2_CAL))
     azimuthCal_lab.append("Azimuth: " + str(cal_symbol(AZIMUTH_CAL))  + str(AZIMUTH_CAL) + "°")
 
     CAL_BOX_EXISTS = False
@@ -938,9 +961,10 @@ vel_lab = Text(row11, grid=[0, 0], text="Velocity: ", align="left", color="#c0c0
 rpm1_lab = Text(row12, grid=[0, 0], text="RPM Front Wheels: ", align="left", color="#c0c0c0", bg="#2b2b2b")
 rpm2_lab = Text(row13, grid=[0, 0], text="RPM Rear Wheels: ", align="left", color="#c0c0c0", bg="#2b2b2b")
 
-parameters_lab = Text(row17, grid=[0, 0], text="Calibration", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
-angCal_lab = Text(row18, grid=[0, 0], text="Launch Angle: +0.0°", align="left", color="#c0c0c0", bg="#2b2b2b")
-velCal_lab = Text(row19, grid=[0, 0], text="Velocity: +0.0m/s", align="left", color="#c0c0c0", bg="#2b2b2b")
+parameters_lab = Text(row16, grid=[0, 0], text="Calibration", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
+angCal_lab = Text(row17, grid=[0, 0], text="Launch Angle: +0.0°", align="left", color="#c0c0c0", bg="#2b2b2b")
+rpm1Cal_lab = Text(row18, grid=[0, 0], text="RPM Front Wheels: +0.0m/s", align="left", color="#c0c0c0", bg="#2b2b2b")
+rpm2Cal_lab = Text(row19, grid=[0, 0], text="RPM Rear Wheels: +0.0m/s", align="left", color="#c0c0c0", bg="#2b2b2b")
 azimuthCal_lab = Text(row20, grid=[0, 0], text="Azimuth: +0.0°", align="left", color="#c0c0c0", bg="#2b2b2b")
 
 
