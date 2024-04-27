@@ -4,18 +4,17 @@ from scipy.integrate import solve_ivp
 import math
 from scipy.interpolate import interp1d
 
-# Drag coefficient, projectile radius (m), area (m2) and mass (kg).
-C_d = 0.47
-D = 0.2413  # m
-R = D / 2  # m
-A = np.pi * R**2
-m = 0.624
-# Air density (kg.m-3), acceleration due to gravity (m.s-2).
-rho_air = 1.28
-g = 9.81
-# For convenience, define  this constant.
-k = 0.5 * C_d * rho_air * A
-y_goal = 3.05  # m
+# CONSTANT:
+C_d = 0.47          # rough estimate drag coefficient https://www.physicsforums.com/threads/what-is-the-lift-coefficient-of-a-basketball.841296/
+C_l = 0.3           # lift coefficient
+D = 0.2413          # diameter of the basketball
+R = D / 2           # radius of the basketball
+A = np.pi * R**2    # area of a cross section of the basketball
+m = 0.624           # mass of the basketball
+rho_air = 1.28      # density of air
+g = 9.81            # acceleration due to gravity
+y_goal = 3.05               # m
+CAMERA_HEIGHT = 1.08        # m
 
 
 def deriv(t, u):
@@ -36,15 +35,15 @@ def deriv(t, u):
     speed = np.hypot(v_x, v_y)
 
     # first derivate we are solving for, x double dot = acceleration in x direction
-    dv_x_dt = -(k/m * speed * v_x) - (k/m * speed * v_y)
+    dv_x_dt = -(((rho_air * A * C_d)/(2 * m)) * speed * v_x) - (((rho_air * A * C_l)/(2 * m)) * speed * v_y)
 
     # second derivate we are solving for, y double dot = acceleration in y direction
-    dv_y_dt = -(k/m * speed * v_y) + (k/m * speed * v_x) - g
+    dv_y_dt = -(((rho_air * A * C_d)/(2 * m)) * speed * v_y) + (((rho_air * A * C_l)/(2 * m)) * speed * v_x) - g
 
     # returning x dot, x double dot, y dot, y double dot
     return v_x, dv_x_dt, v_y, dv_y_dt
 
-# Integrate up to final t value unless we hit the target sooner.
+# Integrate up to final t value unless we hit the target sooner
 t0, tf = 0, 50
 
 def hit_target(t, u):
@@ -61,9 +60,9 @@ hit_target.direction = -1
 
 def max_height(t, u):
     '''
-    Returns when u[3] = y acceleration == 0
+    Returns when u[3] = y velocity == 0 because the maximum height is obtained when
+    the y-velocity is zero.
     '''
-    # The maximum height is obtained when the y-velocity is zero.
     return u[3]
 
 def calculate_manual(theta_degrees, v_i):
@@ -75,15 +74,15 @@ def calculate_manual(theta_degrees, v_i):
     theta_degrees: the launch angle in degrees
     v_i: initial velocity of the basketball
 
-    return: x: array of x values along the trajectory (size = 100)
-            y: array of y values along the trajectory (size = 100)
+    return: x: array of x values along the trajectory
+            y: array of y values along the trajectory
             x_at_y_3_05: x distance when the basketball swishes through the center of the hoop
     '''
 
     theta = np.radians(theta_degrees)
 
     # initial_conditions = x_0, v_x_0, y_0, v_y_0
-    initial_conditions = 0, v_i * np.cos(theta), 1, v_i * np.sin(theta)
+    initial_conditions = 0, v_i * np.cos(theta), CAMERA_HEIGHT, v_i * np.sin(theta)
 
     # solv_ivp(function, time span, initial state)
     soln = solve_ivp(deriv, (t0, tf), initial_conditions, dense_output=True, events=(hit_target, max_height))

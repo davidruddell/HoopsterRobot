@@ -29,7 +29,7 @@ def calculate_velocity(rW, rB, wC, wA):
     '''
     Calculates the linear and angular velocities of the basketball.
 
-    rW: raidus of the wheels FIXME: is this right
+    rW: radius of the wheels
     rB: radius of the basketball
     wC: angualr velocity of the first pair of wheels FIXME: is this right?
     wA: angulart velocity of the second pair of wheels

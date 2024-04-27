@@ -125,6 +125,7 @@ def run_manual_shot_menu():
 
 
 def run_trajectory_screen():
+    
     global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, graph_box, cal_box, THETA_DEGREES, V_RESULT
     
     x, y, center = calculate_manual(THETA_DEGREES, V_RESULT)
@@ -338,7 +339,10 @@ def set_launch():
     # with open("CV2/cvMain.py") as file:
     #     result = exec(file.read())
 
-    # what is X_GOAL?
+    # result = x_result, y_result, theta_result, v_result
+    # X_GOAL = distance to the center of the basketball hoop
+    # HYPOTENUSE = total distance to the rim
+    # RPM = [rpm of first pair of wheels, rpm of second pair of wheels] FIXME: which is front and which is back
     (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
 
 
