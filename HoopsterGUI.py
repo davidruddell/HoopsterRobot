@@ -1,8 +1,8 @@
 import subprocess
 import cv2
-from guizero import App, Text, Picture, PushButton, Box, Window
+from guizero import App, Text, Picture, PushButton, Box, Window, Slider, TextBox
 from PIL import Image, ImageTk
-
+import time
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -11,6 +11,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from calculations import calculate_manual
 import math
 from CV2 import cvMain
+from ComputerVision import import_torch as itorch
+import serial
+
+# try:
+#     ser = serial.Serial('COM6', 9600)
+#     print(f"Successfully connected to port {ser.port}.")
+# except:
+#     print(f"Error connecting to port: {e}")
 
 # Global variables
 SUCCESS = 0
@@ -22,10 +30,12 @@ SET_TRIGGER = False
 LAUNCHED = False
 X_GOAL = 0
 HYPOTENUSE = 0
-RPM = [0,0]
+RPM = [0.0,0.0]
 THETA_RESULT = 0
 THETA_DEGREES = 0
 V_RESULT = 0
+AZIMUTH = 0
+AUTO_SHOT = True
 
 AZIMUTH_CAL=0.00
 LAUNCH_ANG_CAL=0.00
@@ -33,13 +43,46 @@ VELOCITY_CAL=0.00
 
 TRAJ_BOX_EXISTS = False
 CAL_BOX_EXISTS = False
+MANUAL_BOX_EXISTS = False
 
+#global manual shot variables
+BACKGROUND_COLOR = "#2b2b2b"
+SLIDER_MAX_RPM = 1000
+SLIDER_MAX_AZIMUTH = 180
+SLIDER_MAX_LAUNCH_ANGLE = 73
+SLIDER_COLOR = "#4da6ff"
+SLIDER_HANDLE_COLOR = "#ffffff"
 
-global graph_box, cal_box
+global graph_box, cal_box, man_box
 global mobility_gui
 mobility_gui = None
 
 #global cap, live_feed
+
+def check_state(current_state):
+    global prev_state
+    if current_state is not None:
+        if (current_state != prev_state) or (current_state[0] == '2'):
+            data = f"{current_state[0]}{' '}{current_state[1]}\n"
+            print(data)
+            ser.write(data.encode())
+            time.sleep(0.1)
+        prev_state = current_state
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} took {end_time - start_time} seconds to complete.")
+        return result
+    return wrapper
+
+@timer
+def azimuth_to_time():
+    # Your second calculation function here
+    pass
+
 
 # Function to update the video feed frame
 def update_frame():
@@ -95,7 +138,7 @@ def run_mobility_menu():
         app.hide()
         if mobility_gui is None:
             # Create the GUI only once
-            mobility_gui = subprocess.Popen(['python', 'MobilityDisplay.py'])
+            mobility_gui = subprocess.Popen(['python3', 'MobilityDisplay.py'])
         else:
             # If the GUI already exists, just show it
             mobility_gui.show()
@@ -104,21 +147,263 @@ def run_mobility_menu():
     finally:
         app.show()
 
-# Function to run the ManualDisplay script
+
+# # Function to run the ManualDisplay script
+# def run_manual_shot_menu():
+#     try:
+#         app.hide()
+#         process = subprocess.Popen(['python3', 'ManualDisplay.py'])
+#         process.wait()
+#         print("Parent script continues running...")
+#         app.show()
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error running the script: {e}")
+
+
+
 def run_manual_shot_menu():
+    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, cal_box, graph_box, man_box, slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
+    AUTO_SHOT = False
+
     try:
-        app.hide()
-        process = subprocess.Popen(['python', 'ManualDisplay.py'])
-        process.wait()
-        print("Parent script continues running...")
-        app.show()
+        if TRAJ_BOX_EXISTS == True:
+            graph_box.destroy()
+        if CAL_BOX_EXISTS == True:
+            cal_box.destroy()
+        if MANUAL_BOX_EXISTS == True:
+            man_box.destroy()
+
+        def change_parameters(distance):
+            global V_RESULT
+            dis_lab2.clear()
+            ang_lab2.clear()
+            vel_lab2.clear()
+            ang_vel_lab.clear()
+            
+            if distance < 0:
+                distance = 0
+                
+            velocity = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[0]
+            angular = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[1]
+            dis_lab2.append("Expected Distance: {:.2f} m".format(distance))
+            ang_lab2.append("Launch Angle: " + str(launch_angle_value.value) + "°")
+            vel_lab2.append("Velocity: {:.2f} m/s".format(velocity))
+            ang_vel_lab.append("Angular Velocity: {:.2f} rad/s".format(angular))
+
+            V_RESULT = velocity
+    
+        def update_sliders():
+            if rpm1_value.value:
+                slider_rpm1.value = int(rpm1_value.value)
+            else:
+                slider_rpm1.value = 0.00
+
+            if rpm2_value.value:
+                slider_rpm2.value = int(rpm2_value.value)
+            else:
+                slider_rpm2.value = 0.00
+
+            if azimuth_value.value:
+                slider_azimuth.value = int(azimuth_value.value)
+            else:
+                slider_azimuth.value = 0.00
+
+            if launch_angle_value.value:
+                slider_launch_angle.value = int(launch_angle_value.value)
+            else:
+                slider_launch_angle.value = 66.0
+
+            xdistance = update_graph()
+            change_parameters(xdistance)
+
+        def slider_changed(slider):
+            if slider == slider_rpm1:
+                rpm1_value.value = str(slider_rpm1.value)
+            elif slider == slider_rpm2:
+                rpm2_value.value = str(slider_rpm2.value)
+            elif slider == slider_azimuth:
+                azimuth_value.value = str(slider_azimuth.value)
+            elif slider == slider_launch_angle:
+                launch_angle_value.value = str(slider_launch_angle.value)
+                
+            xdistance = update_graph()
+            change_parameters(xdistance)
+
+        def update_graph():
+            velocity = calculate_velocity(0.1016, 0.1207, slider_rpm1.value * 2 * math.pi / 60, slider_rpm2.value * 2 * math.pi / 60)[0]
+            x, y, center = calculate_manual(int(launch_angle_value.value), velocity)
+            print(launch_angle_value.value)
+            print(velocity)
+
+            canvas.figure.clear()
+
+            ax = canvas.figure.add_subplot(111)
+            ax.plot(x, y, color='#ff8c00', linewidth=2)  # Change line color and thickness
+            ax.set_title('Trajectory', color='white', fontsize=16, fontweight='bold')  # Change title color, size, and weight
+            ax.set_xlabel('x [m]', color='#cccccc', fontsize=15)  # Change X-label color and size
+            ax.set_ylabel('y [m]', color='#cccccc', fontsize=15)  # Change Y-label color and size
+            ax.errorbar([center], [3.05], xerr=[0.2286], ecolor="orange")
+            distance = center
+            
+            # Set the x and y axis limits
+            ax.set_xlim([0, 8])
+            ax.set_ylim([0, 6])
+            
+            plt.tight_layout()
+
+            # Set background color
+            canvas.figure.patch.set_facecolor('#2b2b2b')
+            ax.set_facecolor('#2b2b2b')
+
+            # Set grid lines
+            ax.grid(color='#444444', linestyle='--', linewidth=0.5)
+
+            # Set tick colors
+            ax.tick_params(axis='x', colors='#cccccc', labelsize=16)
+            ax.tick_params(axis='y', colors='#cccccc', labelsize=16)
+            
+            ax.set
+
+            canvas.draw()
+            
+            return center
+        
+        # clear all the elements from main_func_box so it is ready for the change in screend
+        #man_box = Box(app, layout="grid", grid=[0, 0], align="top")
+        man_box = Box(app, layout="grid", grid=[0, 0], width=round(3840*0.346), height=round(2160*0.358))
+
+        selector_box = Box(man_box, layout="grid", grid=[0, 0], align="top", height = 100)
+        title_lab = Text(selector_box, grid=[0, 0], text="Parameters", align="top", size=38, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
+
+        rpm1_box = Box(selector_box, layout="grid", grid=[0, 1], align="top", width=300, height=1)
+        rpm1_box2 = Box(rpm1_box, layout="grid", grid=[0, 1], align="top", width=300, height=1)
+
+        rpm1_image = Picture(rpm1_box2, image="GUI/rpm1.png", grid=[0, 0], width=200, height=63, align="top")
+        rpm1_value = TextBox(rpm1_box2, grid=[1, 0], width=4, command=update_sliders, align="top", text="500")
+        rpm1_value.text_size = 30
+        rpm1_value.bg = BACKGROUND_COLOR
+        slider_rpm1 = Slider(
+            rpm1_box,
+            grid=[0, 2],
+            width=309,
+            height=30,
+            start=0,
+            end=SLIDER_MAX_RPM,
+            command=lambda: slider_changed(slider_rpm1),
+            align="top"
+        )
+        slider_rpm1.text_color=BACKGROUND_COLOR
+        slider_rpm1.value = 500.0
+
+        selector_dummy_box1= Text(selector_box, grid=[0,2], width=1, height=2)
+
+        rpm2_box = Box(selector_box, layout="grid", grid=[0, 3], align="top")
+        rpm2_box2 = Box(rpm2_box, layout="grid", grid=[0, 1], align="top")
+
+        rpm2_image = Picture(rpm2_box2, image="GUI/rmp2.png", grid=[0, 0], width=200, height=63, align="top")
+        rpm2_value = TextBox(rpm2_box2, grid=[1, 0], width=4, command=update_sliders, align="top", text="500")
+        rpm2_value.text_size = 30
+        rpm2_value.bg = BACKGROUND_COLOR
+        slider_rpm2 = Slider(
+            rpm2_box,
+            grid=[0, 2],
+            width=309,
+            height=30,
+            start=0,
+            end=SLIDER_MAX_RPM,
+            command=lambda: slider_changed(slider_rpm2),
+            align="top"
+        )
+        slider_rpm2.text_color=BACKGROUND_COLOR
+        slider_rpm2.value = 500.0
+
+        selector_dummy_box2= Text(selector_box, grid=[2,0], width=1, height=2)
+
+        azimuth_box = Box(selector_box, layout="grid", grid=[3, 1], align="top")
+        azimuth_box2 = Box(azimuth_box, layout="grid", grid=[0, 1], align="top")
+
+        azimuth_image = Picture(azimuth_box2, image="GUI/azimuth.png", grid=[0, 0], width=200, height=63, align="top")
+        azimuth_value = TextBox(azimuth_box2, grid=[1, 0], width=4, command=update_sliders, align="top", text="0")
+        azimuth_value.text_size = 30
+        azimuth_value.bg = BACKGROUND_COLOR
+        slider_azimuth = Slider(
+            azimuth_box,
+            grid=[0, 2],
+            width=309,
+            height=30,
+            start=-SLIDER_MAX_AZIMUTH,
+            end=SLIDER_MAX_AZIMUTH,
+            command=lambda: slider_changed(slider_azimuth),
+            align="top"
+        )
+        slider_azimuth.text_color=BACKGROUND_COLOR
+        slider_azimuth.value=0.0
+
+        selector_dummy_box3= Text(selector_box, grid=[3, 2], width=1, height=2)
+
+        launch_angle_box = Box(selector_box, layout="grid", grid=[3, 3], align="top")
+        launch_angle_box2 = Box(launch_angle_box, layout="grid", grid=[0, 1], align="top")
+
+        launch_angle_image = Picture(launch_angle_box2, image="GUI/launchAngle.png", grid=[0, 0], width=200, height=63, align="top")
+        launch_angle_value = TextBox(launch_angle_box2, grid=[1, 0], width=4, command=update_sliders, align="top", text="66")
+        launch_angle_value.text_size = 30
+        launch_angle_value.bg = BACKGROUND_COLOR
+        slider_launch_angle = Slider(
+            launch_angle_box,
+            grid=[0, 2],
+            width=309,
+            height=30,
+            start=60,
+            end=SLIDER_MAX_LAUNCH_ANGLE,
+            command=lambda: slider_changed(slider_launch_angle), 
+            align="right"
+        )
+        slider_launch_angle.text_color=BACKGROUND_COLOR
+        slider_launch_angle.value=66.0
+
+
+        graph_box = Box(man_box, layout="grid", grid=[1, 0], width=1, height=1, align="right")
+        figure = Figure(figsize=(4.0, 4.5), dpi=160)
+        canvas = FigureCanvasTkAgg(figure, master=graph_box.tk)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+        update_graph()
+
+        # Set up the main window UI
+        #box2 = Box(man_box, layout="grid", grid=[2, 0], align="top", border=False, width=450, height=300)
+        # box1 = Box(man_box, layout="grid", grid=[0, 1], align="top", border=False, width=450, height=300)
+
+        # row0 = Box(box1, layout="grid", grid=[0, 0], align="left", border=False)
+        # row1 = Box(box1, layout="grid", grid=[0, 1], align="left", border=False)
+        # row2 = Box(box1, layout="grid", grid=[0, 2], align="left", border=False)
+        # row3 = Box(box1, layout="grid", grid=[0, 3], align="left", border=False)
+        # row4 = Box(box1, layout="grid", grid=[0, 4], align="left", border=False)
+        # row5 = Box(box1, layout="grid", grid=[0, 5], align="left", border=False)
+
+        selector_dummy_box4= Text(selector_box, grid=[0, 4], width=1, height=2)
+
+        #title_dummy = Text(row0, grid=[0, 0], text="", align="top", size=20, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
+        title_lab2 = Text(selector_box, grid=[0, 5], text="Calculations", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b", width=13)
+        dis_lab2 = Text(selector_box, grid=[0, 6], text="Expected Distance:", align="left", color="#c0c0c0", bg="#2b2b2b")
+        dis_lab2.text_size = 20
+        ang_lab2 = Text(selector_box, grid=[0, 7], text="Launch Angle:", align="left", color="#c0c0c0", bg="#2b2b2b")
+        ang_lab2.text_size = 20
+        vel_lab2 = Text(selector_box, grid=[0, 8], text="Velocity:", align="left", color="#c0c0c0", bg="#2b2b2b")
+        vel_lab2.text_size = 20
+        ang_vel_lab = Text(selector_box, grid=[0, 9], text="Angular Velocity:", align="left", color="#c0c0c0", bg="#2b2b2b")
+        ang_vel_lab.text_size = 20
+
+        CAL_BOX_EXISTS = False
+        TRAJ_BOX_EXISTS = False
+        MANUAL_BOX_EXISTS = True
+
     except subprocess.CalledProcessError as e:
         print(f"Error running the script: {e}")
 
 
-
 def run_trajectory_screen():
-    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, graph_box, cal_box, THETA_DEGREES, V_RESULT
+    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, graph_box, cal_box, man_box, THETA_DEGREES, V_RESULT
+    AUTO_SHOT = True
     
     x, y, center = calculate_manual(THETA_DEGREES, V_RESULT)
 
@@ -126,6 +411,8 @@ def run_trajectory_screen():
         graph_box.destroy()
     if CAL_BOX_EXISTS == True:
         cal_box.destroy()
+    if MANUAL_BOX_EXISTS == True:
+        man_box.destroy()
 
     graph_box = Box(box1, layout="grid", grid=[0, 0], width=1, height=1, align="left")
     figure = Figure(figsize=(8.35, 4.85), dpi=160)
@@ -165,50 +452,59 @@ def run_trajectory_screen():
     canvas.draw()
     TRAJ_BOX_EXISTS = True
     CAL_BOX_EXISTS = False
+    MANUAL_BOX_EXISTS = False
 
 def run_camera_screen():
-    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, graph_box, cal_box
+    global AUTO_SHOT, TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, graph_box, cal_box, man_box
+    AUTO_SHOT = True
     # Check if graph_box already exists
     if TRAJ_BOX_EXISTS == True:
         graph_box.destroy()
     if CAL_BOX_EXISTS == True:
         cal_box.destroy()
+    if MANUAL_BOX_EXISTS == True:
+            man_box.destroy()
     
     TRAJ_BOX_EXISTS = False
     CAL_BOX_EXISTS = False
+    MANUAL_BOX_EXISTS = False
 
 def run_calibration_screen():
-    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, cal_box, graph_box, AZIMUTH_CAL, LAUNCH_ANG_CAL, VELOCITY_CAL, velocity_cal_text, azimuth_cal_text, launch_angle_cal_text
+    global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, cal_box, graph_box, man_box, AZIMUTH_CAL, LAUNCH_ANG_CAL, VELOCITY_CAL, velocity_cal_text, azimuth_cal_text, launch_angle_cal_text
+    AUTO_SHOT = True
 
     try:
         if TRAJ_BOX_EXISTS == True:
             graph_box.destroy()
         if CAL_BOX_EXISTS == True:
             cal_box.destroy()
+        if MANUAL_BOX_EXISTS == True:
+            man_box.destroy()
+
         # clear all the elements from main_func_box so it is ready for the change in screend
         cal_box = Box(box1, layout="grid", grid=[0, 0], width=round(3840*0.346), height=round(2160*0.358))
 
         launch_angle_cal_box = Box(cal_box, layout="grid", grid=[0, 0], width=1, height=1, align="top")
         launchAngle_cal_image = Picture(launch_angle_cal_box, image="GUI/AngleLabel.png", grid=[0, 0], width=300, height=100)
-        launchAngle_cal_add_button = PushButton(launch_angle_cal_box, text="+", command=launchAngle_plusCal, grid=[3, 0])
+        launchAngle_cal_add_button = PushButton(launch_angle_cal_box, text="+", command=launchAngle_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
         launch_angle_cal_text = Text(launch_angle_cal_box, text=LAUNCH_ANG_CAL, grid=[2, 0], color="white")
-        launch_angle_subtract_button = PushButton(launch_angle_cal_box, text="-", command=launchAngle_minusCal, grid=[1, 0])
+        launch_angle_subtract_button = PushButton(launch_angle_cal_box, text="-", command=launchAngle_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal1 = Box(cal_box, layout="grid", grid=[0, 1], width=1, height=100, align="top")
 
         azimuth_box = Box(cal_box, layout="grid", grid=[0, 4], width=1, height=1, align="top")
         azimuth_image = Picture(azimuth_box, image="GUI/AzimuthLabel.png", grid=[0, 0], width=300, height=100)
-        azimuth_add_button = PushButton(azimuth_box, text="+", command=azimuth_plusCal, grid=[3, 0])
+        azimuth_add_button = PushButton(azimuth_box, text="+", command=azimuth_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
         azimuth_cal_text = Text(azimuth_box, text=AZIMUTH_CAL, grid=[2, 0], color="white")
-        azimuth_subtract_button = PushButton(azimuth_box, text="-", command=azimuth_minusCal, grid=[1, 0])
+        azimuth_subtract_button = PushButton(azimuth_box, text="-", command=azimuth_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal2 = Box(cal_box, layout="grid", grid=[0, 3], width=1, height=100, align="top")
 
         velocity_cal_box = Box(cal_box, layout="grid", grid=[0, 2], width=1, height=1, align="top")
         velocity_cal_image = Picture(velocity_cal_box, image="GUI/VelocityLabel.png", grid=[0, 0], width=300, height=100)
-        velocity_cal_add_button = PushButton(velocity_cal_box, text="+", command=velocity_plusCal, grid=[3, 0])
+        velocity_cal_add_button = PushButton(velocity_cal_box, text="+", command=velocity_plusCal, grid=[3, 0], image="GUI/Plus.png", width=50, height=50)
         velocity_cal_text = Text(velocity_cal_box, text=str(VELOCITY_CAL), grid=[2, 0], color="white")
-        velocity_cal_subtract_button = PushButton(velocity_cal_box, text="-", command=velocity_minusCal, grid=[1, 0])
+        velocity_cal_subtract_button = PushButton(velocity_cal_box, text="-", command=velocity_minusCal, grid=[1, 0], image="GUI/Minus.png", width=50, height=50)
 
         spacer_cal3 = Box(cal_box, layout="grid", grid=[0, 5], width=1, height=100, align="top")
 
@@ -218,6 +514,7 @@ def run_calibration_screen():
 
         CAL_BOX_EXISTS = True
         TRAJ_BOX_EXISTS = False
+        MANUAL_BOX_EXISTS = False
 
     except subprocess.CalledProcessError as e:
         print(f"Error running the script: {e}")
@@ -296,6 +593,7 @@ def launch():
 
     if SET_TRIGGER and launch_button.enabled:
         print("Launching Basketball")
+
         LAUNCHED = True
         countdown_window.show()
         app.hide()
@@ -314,27 +612,46 @@ def radians_to_degrees(radians):
 
 # Function to prepare for launch
 def set_launch():
-    global SET_TRIGGER, X_GOAL, HYPOTENUSE, RPM, THETA_RESULT, V_RESULT, TRAJ_BOX_EXISTS, THETA_DEGREES, CAL_BOX_EXISTS
+    global SET_TRIGGER, X_GOAL, HYPOTENUSE, RPM, THETA_RESULT, V_RESULT, TRAJ_BOX_EXISTS, THETA_DEGREES, CAL_BOX_EXISTS, AUTO_SHOT, slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
 
     print("Preparing for launch")
     SET_TRIGGER = True
 
-    # dis_lab.clear()
-    # ang_lab.clear()
-    # vel_lab.clear()
+    if (AUTO_SHOT == True):
+        (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
 
-    # dis_lab.append("Distance: 4.2 m")
-    # ang_lab.append("Launch Angle: 65 deg")
-    # vel_lab.append("Velocity: 8.35 m/s")
+        #if hoop not found
+        if (HYPOTENUSE == -1):
+            dis_lab.clear()
+            disx_lab.clear()
+            ang_lab.clear()
+            vel_lab.clear()
+            rpm1_lab.clear()
+            rpm2_lab.clear()
 
-    # with open("CV2/cvMain.py") as file:
-    #     result = exec(file.read())
+            dis_lab.append("No Hoop Detected")
+            SET_TRIGGER = False
+            return
+        #if calculation is not possible
+        if (HYPOTENUSE == -2):
+            dis_lab.clear()
+            disx_lab.clear()
+            ang_lab.clear()
+            vel_lab.clear()
+            rpm1_lab.clear()
+            rpm2_lab.clear()
+            dis_lab.append("Shot Not Possible")
+            SET_TRIGGER = False
+            return
 
-    (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
+        x_result, y_result, THETA_RESULT, V_RESULT = result
 
+        
+        THETA_DEGREES = radians_to_degrees(THETA_RESULT)
 
-    #if hoop not found
-    if (HYPOTENUSE == -1):
+        if TRAJ_BOX_EXISTS == True:
+             run_trajectory_screen()
+
         dis_lab.clear()
         disx_lab.clear()
         ang_lab.clear()
@@ -342,55 +659,56 @@ def set_launch():
         rpm1_lab.clear()
         rpm2_lab.clear()
 
-        dis_lab.append("No Hoop Detected")
-        return
-    #if calculation is not possible
-    if (HYPOTENUSE == -2):
+        formatted_hypot = format(HYPOTENUSE, '.2f')
+        formatted_x_goal = format(X_GOAL, '.2f')
+        formatted_theta_result = format(THETA_DEGREES, '.2f')
+        formatted_v_result = format(V_RESULT, '.2f')
+        formatted_rpm1 = format(RPM[0], '.2f')
+        formatted_rpm2 = format(RPM[1], '.2f')
+
+        dis_lab.append("Distance: " + str(formatted_hypot) + "m")
+        disx_lab.append("X-Axis Distance: " + str(formatted_x_goal) + "m")
+        ang_lab.append("Launch Angle: " + str(formatted_theta_result) + "°")
+        vel_lab.append("Velocity: " + str(formatted_v_result) + "m/s")
+        rpm1_lab.append("RPM Front Wheels: " + str(formatted_rpm1))
+        rpm2_lab.append("RPM Rear Wheels: " + str(formatted_rpm2))
+        
+        hoop_status.image = "GUI/Check.png"
+        pos_status.image = "GUI/Check.png"
+        dis_status.image = "GUI/Check.png"
+        ang_status.image = "GUI/Check.png"
+        vel_status.image = "GUI/Check.png"
+        anom_status.image = "GUI/NotCheck.png"
+        launch_button.enabled = True
+        print("Ready for launch")
+
+    else:
         dis_lab.clear()
         disx_lab.clear()
         ang_lab.clear()
         vel_lab.clear()
         rpm1_lab.clear()
         rpm2_lab.clear()
-        dis_lab.append("Shot Not Possible")
-        return
 
-    x_result, y_result, THETA_RESULT, V_RESULT = result
-    
-    THETA_DEGREES = radians_to_degrees(THETA_RESULT)
+        #slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
+        THETA_DEGREES = slider_launch_angle.value
+        RPM[0] = slider_rpm1.value
+        RPM[1] = slider_rpm2.value
 
-    if TRAJ_BOX_EXISTS == True:
-        run_trajectory_screen()
 
-    dis_lab.clear()
-    disx_lab.clear()
-    ang_lab.clear()
-    vel_lab.clear()
-    rpm1_lab.clear()
-    rpm2_lab.clear()
+        formatted_theta_result = format(THETA_DEGREES, '.2f')
+        formatted_rpm1 = format(RPM[0], '.2f')
+        formatted_rpm2 = format(RPM[1], '.2f')
+        formatted_v_result = ("{:.2f}".format(V_RESULT))
 
-    formatted_hypot = format(HYPOTENUSE, '.2f')
-    formatted_x_goal = format(X_GOAL, '.2f')
-    formatted_theta_result = format(THETA_DEGREES, '.2f')
-    formatted_v_result = format(V_RESULT, '.2f')
-    formatted_rpm1 = format(RPM[0], '.2f')
-    formatted_rpm2 = format(RPM[1], '.2f')
+        dis_lab.append("Manual Shot")
+        ang_lab.append("Launch Angle: " + str(formatted_theta_result) + "°")
+        vel_lab.append("Velocity: " + str(formatted_v_result) + "m/s")
+        rpm1_lab.append("RPM Front Wheels: " + str(formatted_rpm1))
+        rpm2_lab.append("RPM Rear Wheels: " + str(formatted_rpm2))
+        launch_button.enabled = True
+        print("Ready for launch")
 
-    dis_lab.append("Distance: " + str(formatted_hypot) + "m")
-    disx_lab.append("X-Axis Distance: " + str(formatted_x_goal) + "m")
-    ang_lab.append("Launch Angle: " + str(formatted_theta_result) + "°")
-    vel_lab.append("Velocity: " + str(formatted_v_result) + "m/s")
-    rpm1_lab.append("RPM Front Wheels: " + str(formatted_rpm1))
-    rpm2_lab.append("RPM Rear Wheels: " + str(formatted_rpm2))
-
-    hoop_status.image = "GUI/Check.png"
-    pos_status.image = "GUI/Check.png"
-    dis_status.image = "GUI/Check.png"
-    ang_status.image = "GUI/Check.png"
-    vel_status.image = "GUI/Check.png"
-    anom_status.image = "GUI/NotCheck.png"
-    launch_button.enabled = True
-    print("Ready for launch")
 
 # Function to abort the launch process
 def abort_launch():
@@ -419,6 +737,8 @@ def abort_launch():
     vel_status.image = "GUI/NotCheck.png"
     anom_status.image = "GUI/NotCheck.png"
     launch_button.enabled = False
+    LAUNCHED = False
+
 
 # Function to abort the launch countdown
 def abort_countdown():
@@ -632,6 +952,10 @@ reset_button = PushButton(box4, grid=[0, 5], image="GUI/ResetButton.png", text="
 
 # Repeat function calls
 app.repeat(1000, detect_anomaly)
+
+# app.repeat(1000, set_manual_launch)
+
+#app.repeat()
 
 # Close the app
 app.when_closed = on_closed

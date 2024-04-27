@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 import math
 from ultralytics import YOLO
-
+import time
 
 # Initialize the YOLOv8n model
 # model = YOLO('ComputerVision/Saul.pt')
-
+global calcDistanceAndVelocity_startTime
 
 # #img_path = 'ComputerVision/6.png'
 # #og_Image = cv2.imread(img_path)
@@ -235,7 +235,8 @@ def find_basketball_hoop_width(img, og_Image, cornerx, cornery):
 
 
 def main():
-    
+    global calcDistanceAndVelocity_startTime
+    detect_hoop_startTime = time.time()
     #while True:
         # Capture frame-by-frame
     ret, frame = cap.read()
@@ -250,13 +251,21 @@ def main():
 
     # Check if cropped_images is not empty
     if cropped_images:
+        detect_hoop_endTime = time.time()
+        detect_azimuth_startTime = time.time()
         hoop_width, hoop_center_x = find_basketball_hoop_width(cropped_images[0], og_Image, cornerx, cornery)
         #backboard_width = find_backboard_width(cropped_images[1])
 
         print("The width of the Basketball Hoop is:", hoop_width, "px")
-        print("The difference between the the center of hoop vs center of image:", hoop_center_x, "px [CI - CH]")
+        print("The difference between the center of hoop vs center of image:", hoop_center_x, "px [CI - CH]")
         #print("The width of the Backboard is:", backboard_width, "px")
+        detect_azimuth_endTime = time.time()
 
+        print(f"The hoop detection took {detect_hoop_endTime - detect_hoop_startTime} seconds to complete.")
+        print(f"The azimuth calculation took {detect_azimuth_endTime - detect_azimuth_startTime} seconds to complete.")
+
+        
+        calcDistanceAndVelocity_startTime = time.time()
         distance_to_rim = calculate_distance_to_rim(hoop_width, camera_fov_degrees_h, sensor_width_mm, sensor_height_mm, known_rim_width_mm)
         print(f"The distance from the camera to the basketball rim is approximately {distance_to_rim:.2f} meters.")
 
@@ -267,7 +276,6 @@ def main():
     else:
         # print("hitdaelse")
         return -1
-
 
     # # Display the resulting frame
     # cv2.imshow('Frame', frame)

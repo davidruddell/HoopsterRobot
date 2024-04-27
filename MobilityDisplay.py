@@ -12,6 +12,7 @@ def run_main_menu():
     except Exception as e:
         print(f"Error running the script: {e}")
 
+
 def check_state():
     """This function periodically checks the state of each button. It writes to the serial the value for the Arduino code to evaluate and execute."""
     button_values = {

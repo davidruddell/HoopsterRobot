@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ComputerVision import import_torch as itorch
 import cv2
+import time
+
 
 C_d = 0.47
 #coefficient of lift https://www.physicsforums.com/threads/what-is-the-lift-coefficient-of-a-basketball.841296/
@@ -57,10 +59,11 @@ def calculate_auto(x_goal):
 
     #elevation system physically is able to adjust between 60deg to 73deg
 
-    #minimum launch angle in radians (73deg)
+    #maximum launch angle in radians (73deg)
     theta = 1.27409
     
-    #maximum launch angle in radians (60deg)
+    #minimum launch angle in radians (60deg)
+    calcLaunchAngle_startTime = time.time()
     while theta > 1.0472:
         #start at 15m/s
         v_i = 15
@@ -116,10 +119,12 @@ def calculate_auto(x_goal):
         return None, None, None, -2
 
     print("Final angle" + str(radians_to_degrees(final_angle)))
+    calcLaunchAngle_endTime = time.time()
+    print(f"The Launch Angle calculations took {calcLaunchAngle_endTime - calcLaunchAngle_startTime} seconds to complete.")
     min_v = min(v_i_arr)
     index = v_i_arr.index(min_v)
     return x_arr[index], y_arr[index], theta_arr[index], round(min_v,2)
-                    
+
 def get_rpm(v_b):
     omega_b = 6.76
     r_w = 0.15
@@ -144,7 +149,7 @@ def main():
 
     #if hoop not detected
     if (hypotenuse == -1):
-        return (None, -1, -1, -1)
+        return (None, -1, -1, [-1, -1])
 
     #solve for x-axis
     x_goal = solve_for_x_goal(hypotenuse, y_goal)
@@ -153,12 +158,13 @@ def main():
 
     #x_goal = 4.57
     result = calculate_auto(x_goal)
-
+    calcDistanceAndVelocity_endTime = time.time()
+    print(f"The distance and velocity calculations took {calcDistanceAndVelocity_endTime - itorch.calcDistanceAndVelocity_startTime} seconds to complete.")
     x_result, y_result, theta_result, v_result = result
     
     #if no solution found
     if (v_result == -2):
-        return (None, -2, -2, -2)
+        return (None, -2, -2, [-2, -2])
 
 
     rpm = get_rpm(v_result)
