@@ -361,7 +361,7 @@ def set_launch():
         return
     
     # Check Azmiuth information
-    while abs(AZIMUTH > 2):
+    while (abs(AZIMUTH) > 2):
         # Assume 20 steps per pixel
         if (AZIMUTH > 0):
             print(f"Rotate Clockwise {20*abs(AZIMUTH)} steps")
