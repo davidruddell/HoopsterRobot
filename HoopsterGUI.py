@@ -34,7 +34,8 @@ RPM = [0.0,0.0]
 THETA_RESULT = 0
 THETA_DEGREES = 0
 V_RESULT = 0
-AZIMUTH = 0
+AZIMUTH = 0 #steps
+AZIMUTH_DEG = 0 #azimuth in degrees for manual
 AUTO_SHOT = True
 
 AZIMUTH_CAL=0.00
@@ -641,34 +642,40 @@ def set_launch():
     SET_TRIGGER = True
 
     if (AUTO_SHOT == True):
+        temp, AZIMUTH = itorch.main()
+        while (abs(AZIMUTH) > 2):
+            # Assume 20 steps per pixel
+            if (AZIMUTH > 0):
+                print(f"Rotate Clockwise {20*abs(AZIMUTH)} steps")
+                # ser.write(bytes('5', 20*AZIMUTH))
+            else:
+                print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} steps")
+                # ser.write(bytes('5', (-20)*AZIMUTH))
+            # Rerun to check Azimuth disalignment
+            temp, AZIMUTH = itorch.main()
+
+
         (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
+
+        dis_lab.clear()
+        disx_lab.clear()
+        ang_lab.clear()
+        vel_lab.clear()
+        rpm1_lab.clear()
+        rpm2_lab.clear()
 
         #if hoop not found
         if (HYPOTENUSE == -1):
-            dis_lab.clear()
-            disx_lab.clear()
-            ang_lab.clear()
-            vel_lab.clear()
-            rpm1_lab.clear()
-            rpm2_lab.clear()
-
             dis_lab.append("No Hoop Detected")
             SET_TRIGGER = False
             return
         #if calculation is not possible
         if (HYPOTENUSE == -2):
-            dis_lab.clear()
-            disx_lab.clear()
-            ang_lab.clear()
-            vel_lab.clear()
-            rpm1_lab.clear()
-            rpm2_lab.clear()
             dis_lab.append("Shot Not Possible")
             SET_TRIGGER = False
             return
 
         x_result, y_result, THETA_RESULT, V_RESULT = result
-
         
         THETA_DEGREES = radians_to_degrees(THETA_RESULT)
 
@@ -712,6 +719,15 @@ def set_launch():
         vel_lab.clear()
         rpm1_lab.clear()
         rpm2_lab.clear()
+
+        AZIMUTH = slider_azimuth.value
+
+        if (AZIMUTH > 0):
+            print(f"Rotate Clockwise {20*abs(AZIMUTH)} degrees")
+            # ser.write(bytes('5', 20*AZIMUTH))
+        else:
+            print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} degrees")
+            # ser.write(bytes('5', (-20)*AZIMUTH))
 
         #slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
         THETA_DEGREES = slider_launch_angle.value
