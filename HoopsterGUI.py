@@ -2,7 +2,7 @@ import subprocess
 import cv2
 from guizero import App, Text, Picture, PushButton, Box, Window
 from PIL import Image, ImageTk
-
+import serial
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -11,6 +11,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from calculations import calculate_manual
 import math
 from CV2 import cvMain
+
+try:
+    ser = serial.Serial('COM5', 9600)
+except:
+    print("COM Port not available")
 
 # Global variables
 SUCCESS = 0
@@ -360,8 +365,10 @@ def set_launch():
         # Assume 20 steps per pixel
         if (AZIMUTH > 0):
             print(f"Rotate Clockwise {20*abs(AZIMUTH)} steps")
+            ser.write(bytes('5', 20*AZIMUTH))
         else:
             print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} steps")
+            ser.write(bytes('5', 20*AZIMUTH))
         # Rerun to check Azimuth disalignment
         (result, X_GOAL, HYPOTENUSE, RPM, AZIMUTH) = cvMain.main()
 
