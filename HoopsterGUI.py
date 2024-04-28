@@ -22,7 +22,7 @@ for port in ports:
     print(port.device)
 
 try:
-    ser = serial.Serial('/dev/cu.usbmodem11201', 9600)
+    ser = serial.Serial('/dev/cu.usbmodem101', 115200)
     print(f"Successfully connected to port {ser.port}.")
 except:
     print(f"Error connecting to port: {e}")
@@ -648,6 +648,7 @@ def set_launch():
     print("Preparing for launch")
     SET_TRIGGER = True
 
+    #AUTO SHOT SEQUENCE
     if (AUTO_SHOT == True):
         temp, AZIMUTH = itorch.main()
         while (abs(AZIMUTH) > 2):
@@ -719,6 +720,7 @@ def set_launch():
         launch_button.enabled = True
         print("Ready for launch")
 
+    #MANUAL SHOT SEQUENCE
     else:
         dis_lab.clear()
         disx_lab.clear()
@@ -727,8 +729,7 @@ def set_launch():
         rpm1_lab.clear()
         rpm2_lab.clear()
 
-
-        #Changing the Azimuth
+        #CHANGING AZIMUTH
         AZIMUTH = (slider_azimuth.value) / .0113
         #.0113 is a value we calibrated for degrees per step
 
@@ -749,18 +750,33 @@ def set_launch():
 
 
 
-        ser.write
+        #CHANGING LAUNCH ANGLE
         THETA_DEGREES = slider_launch_angle.value
+       
+        #REQUEST CURRENT LAUNCH ANGLE
+        data = f"{6}{' '}\n"
+        ser.write(data.encode())
+        time.sleep(0.1)
+        while True:
+            # Read a line of data from the Arduino
+            print("here1")
+            line = ser.readline().decode().strip()
+            print(line)
+            if line:
+                print("here2")
+                # Assuming the data format is "Angle: value"
+                if line.startswith("Angle:"):
+                    y_value = float(line.split(":")[1])
+                    print(f"Angle: {y_value}")
+                    break
 
-        #launchAngle_sensor = ser.read(data)
-        THETA_DEGREES = THETA_DEGREES - int(round(launchAngle_sensor))
+        y_value = 90 - y_value
+        THETA_DEGREES = THETA_DEGREES - int(round(y_value))
         theta_stepSend = THETA_DEGREES / .005
         data = f"{1}{' '}{theta_stepSend}\n"
         print(data)
         ser.write(data.encode())
         time.sleep(0.1)
-
-
 
         RPM[0] = slider_rpm1.value
         RPM[1] = slider_rpm2.value
@@ -778,12 +794,28 @@ def set_launch():
         launch_button.enabled = True
         print("Ready for launch")
 
-
 # Function to abort the launch process
 def abort_launch():
     global LAUNCHED
     if not LAUNCHED:
         print("Launch Aborted.")
+
+
+    data = f"{6}{' '}\n"
+    ser.write(data.encode())
+    time.sleep(0.1)
+    while True:
+        # Read a line of data from the Arduino
+        print("here1")
+        line = ser.readline().decode().strip()
+        print(line)
+        if line:
+            print("here2")
+            # Assuming the data format is "Angle: value"
+            if line.startswith("Angle:"):
+                y_value = float(line.split(":")[1])
+                print(f"Angle: {y_value}")
+                break
 
     dis_lab.clear()
     disx_lab.clear()
@@ -808,10 +840,16 @@ def abort_launch():
     launch_button.enabled = False
     LAUNCHED = False
 
-
 # Function to abort the launch countdown
 def abort_countdown():
     global COUNTDOWN
+
+    #CANCEL MOTORS
+    data = f"{3}{' '}\n"
+    print(data)
+    ser.write(data.encode())
+    time.sleep(0.1)
+
     app.cancel(update_timer)
     app.show()
     clock_dis.value = "5"
@@ -843,17 +881,46 @@ def reset_stats():
     update_stats()
 
 # Function to update the timer
+#AT THE END OF THE TIMER, RUN THE LAUNCH SEQUENCE
 def update_timer():
     global COUNTDOWN
     COUNTDOWN -= 1
     clock_dis.value = str(COUNTDOWN)
+
+    if COUNTDOWN == 2:
+        run_flywheel_motors()
+
     if COUNTDOWN == 0:
         launch()
         app.cancel(update_timer)
         clock_dis.value = "5"
         COUNTDOWN = 5
+        run_ball_delivery_system()
         launched_window.show()
         countdown_window.hide()
+
+def run_flywheel_motors():
+    global RPM
+
+    #move rpm1 front wheels
+    data = f"{8}{' '}{RPM[0]}\n"
+    print(data)
+    ser.write(data.encode())
+    time.sleep(0.1)
+
+    #move rpm2 back wheels
+    data = f"{9}{' '}{RPM[1]}\n"
+    print(data)
+    ser.write(data.encode())
+    time.sleep(0.1)
+
+def run_ball_delivery_system():
+    #move ball delivery system
+    data = f"{3}{' '}\n"
+    print(data)
+    ser.write(data.encode())
+    time.sleep(0.1)
+
 
 # Function to update the statistics display
 def update_stats():

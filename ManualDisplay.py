@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import math
 import subprocess
@@ -25,11 +23,8 @@ global velocity
 global distance
 distance = 0
 velocity = 0
-# NEW_VALUES = False
 
 #ser = serial.Serial('/dev/cu.usbmodem11301', 9600)
-
-# -*- coding: utf-8 -*-
 
 def calculate_velocity(rW, rB, wC, wA):
     omega_B = (rW / (2 * rB)) * (wC - wA)
@@ -89,51 +84,11 @@ def update_sliders():
 def set_button():
     global RETURN_RPM1, RETURN_RPM2, RETURN_AZIMUTH, RETURN_LAUNCH_ANGLE, NEW_VALUES
 
-    """Handle the adjust button click event."""
-    # print("RPM Front Wheels:", slider_rpm1.value)
-    # print("RPM Back Wheels:", slider_rpm2.value)
-    # print("Azimuth:", slider_azimuth.value)
-    # print("Launch Angle:", slider_launch_angle.value)
-
     RETURN_RPM1 = slider_rpm1.value
     RETURN_RPM2 = slider_rpm2.value
     RETURN_AZIMUTH = slider_azimuth.value
     RETURN_LAUNCH_ANGLE = slider_launch_angle.value
-
-   #if (RETURN_RPM1 == HoopsterGUI.RPM1) and (RETURN_RPM2 == HoopsterGUI.RPM2) and (RETURN_AZIMUTH == HoopsterGUI.AZIMUTH) and (RETURN_LAUNCH_ANGLE == HoopsterGUI.THETA_DEGREES)
-
-
-    # return (slider_rpm1.value, slider_rpm2.value, slider_azimuth.value, slider_launch_angle.value)
-
-    # print("Set RPM 1")
-    # ser.write(bytes('2', 'UTF-8'))
-    # ser.write(bytes(str(int(rpm1_value.value)%255), 'UTF-8'))
-
-    # print("Set RPM 2")
-    # ser.write(bytes('2', 'UTF-8'))
-    # ser.write(bytes(str(int(rpm2_value.value)%255), 'UTF-8'))
-
-    # print("Set Azimuth")
-    # ser.write(bytes('5', 'UTF-8'))
-    # ser.write(bytes(str(int(slider_azimuth.value)), 'UTF-8'))
-
-    # print("Set Launch Angle")
-    # ser.write(bytes('1', 'UTF-8'))
-    # ser.write(bytes(str(int(launch_angle_value.value)), 'UTF-8'))
-
-
-
-    # Send serial information/commands representing the values inputted from the slider
-    # transmitCommand(Command.CHANGE_MOTOR1_RPM, slider_rpm1.value)
-    # transmitCommand(Command.CHANGE_MOTOR2_RPM, slider_rpm2.value)
-    # transmitCommand(Command.CHANGE_AZIMUTH, 0, slider_azimuth.value)
-    # transmitCommand(Command.CHANGE_AIM, 0, slider_launch_angle.value)
-    # NEW_VALUES = True
     run_main_menu()
-    #return (RETURN_RPM1, RETURN_RPM2, RETURN_AZIMUTH, RETURN_LAUNCH_ANGLE)
-
-# def check_if_new_values():
-#     return 
 
 def slider_changed(slider):
     if slider == slider_rpm1:
@@ -186,7 +141,6 @@ def update_graph():
     canvas.draw()
     
     return center
-    
 
 app = App(
     title="Manual Inputs",
