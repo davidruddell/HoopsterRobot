@@ -727,26 +727,43 @@ def set_launch():
         rpm1_lab.clear()
         rpm2_lab.clear()
 
-        AZIMUTH = (slider_azimuth.value) / .003
+
+        #Changing the Azimuth
+        AZIMUTH = (slider_azimuth.value) / .0113
+        #.0113 is a value we calibrated for degrees per step
 
         if (AZIMUTH > 0):
+            AZIMUTH = round(AZIMUTH)
             print(f"Rotate Clockwise {AZIMUTH} steps")
             data = f"{5}{' '}{AZIMUTH}\n"
             print(data)
             ser.write(data.encode())
             time.sleep(0.1)
         else:
+            AZIMUTH = round(AZIMUTH)
             print(f"Rotate Counter-Clockwise {AZIMUTH} steps")
             data = f"{5}{' '}{AZIMUTH}\n"
             print(data)
             ser.write(data.encode())
             time.sleep(0.1)
 
-        #slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
+
+
+        ser.write
         THETA_DEGREES = slider_launch_angle.value
+
+        #launchAngle_sensor = ser.read(data)
+        THETA_DEGREES = THETA_DEGREES - int(round(launchAngle_sensor))
+        theta_stepSend = THETA_DEGREES / .005
+        data = f"{1}{' '}{theta_stepSend}\n"
+        print(data)
+        ser.write(data.encode())
+        time.sleep(0.1)
+
+
+
         RPM[0] = slider_rpm1.value
         RPM[1] = slider_rpm2.value
-
 
         formatted_theta_result = format(THETA_DEGREES, '.2f')
         formatted_rpm1 = format(RPM[0], '.2f')
