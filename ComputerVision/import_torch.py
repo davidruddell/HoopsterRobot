@@ -26,6 +26,9 @@ model = YOLO('ComputerVision/Saul.pt')
 #og_Image = cv2.imread(img_path)
 
 cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # Set width
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)  # Set height
+
 
 sensor_width_mm = 8.0  # From the provided specifications
 sensor_height_mm = 6.0  # From the provided specifications

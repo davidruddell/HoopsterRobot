@@ -22,7 +22,7 @@ for port in ports:
     print(port.device)
 
 try:
-    ser = serial.Serial('/dev/cu.usbmodem101', 115200)
+    ser = serial.Serial('/dev/cu.usbmodem11201', 115200)
     print(f"Successfully connected to port {ser.port}.")
 except:
     print(f"Error connecting to port: {e}")
@@ -61,6 +61,10 @@ SLIDER_MAX_AZIMUTH = 180
 SLIDER_MAX_LAUNCH_ANGLE = 73
 SLIDER_COLOR = "#4da6ff"
 SLIDER_HANDLE_COLOR = "#ffffff"
+
+#3550 azimuth steps for 1920pixels wide
+#1920 resolution of camera
+STEPS_PER_PIXEL = 1.8489583333 #3550 / 1920 azimuth steps per pixel
 
 global graph_box, cal_box, man_box
 global mobility_gui
@@ -130,17 +134,6 @@ def fail_shot():
     update_stats()
     abort_launch()
 
-# Function to run the MobilityDisplay script
-# def run_mobility_menu():
-#     try:
-#         app.hide()
-#         process = subprocess.Popen(['python', 'MobilityDisplay.py'])
-#         process.wait()
-#         print("Parent script continues running...")
-#         app.show()
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error running the script: {e}")
-
 def run_mobility_menu():
     global mobility_gui
     try:
@@ -155,19 +148,6 @@ def run_mobility_menu():
         print(f"Error running the script: {e}")
     finally:
         app.show()
-
-
-# # Function to run the ManualDisplay script
-# def run_manual_shot_menu():
-#     try:
-#         app.hide()
-#         process = subprocess.Popen(['python3', 'ManualDisplay.py'])
-#         process.wait()
-#         print("Parent script continues running...")
-#         app.show()
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error running the script: {e}")
-
 
 
 def run_manual_shot_menu():
@@ -377,17 +357,6 @@ def run_manual_shot_menu():
         canvas.draw()
         canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
         update_graph()
-
-        # Set up the main window UI
-        #box2 = Box(man_box, layout="grid", grid=[2, 0], align="top", border=False, width=450, height=300)
-        # box1 = Box(man_box, layout="grid", grid=[0, 1], align="top", border=False, width=450, height=300)
-
-        # row0 = Box(box1, layout="grid", grid=[0, 0], align="left", border=False)
-        # row1 = Box(box1, layout="grid", grid=[0, 1], align="left", border=False)
-        # row2 = Box(box1, layout="grid", grid=[0, 2], align="left", border=False)
-        # row3 = Box(box1, layout="grid", grid=[0, 3], align="left", border=False)
-        # row4 = Box(box1, layout="grid", grid=[0, 4], align="left", border=False)
-        # row5 = Box(box1, layout="grid", grid=[0, 5], align="left", border=False)
 
         selector_dummy_box4= Text(selector_box, grid=[0, 4], width=1, height=2)
 
@@ -651,14 +620,21 @@ def set_launch():
     #AUTO SHOT SEQUENCE
     if (AUTO_SHOT == True):
         temp, AZIMUTH = itorch.main()
-        while (abs(AZIMUTH) > 2):
+        while (abs(AZIMUTH) > 5): #while we are not within 5 pixels of center
             # Assume 20 steps per pixel
             if (AZIMUTH > 0):
-                print(f"Rotate Clockwise {20*abs(AZIMUTH)} steps")
+                data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
+                print(data)
+                ser.write(data.encode())
+                time.sleep(0.1)
+                print(f"Rotate Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
                 # ser.write(bytes('5', 20*AZIMUTH))
             else:
-                print(f"Rotate Counter-Clockwise {20*abs(AZIMUTH)} steps")
-                # ser.write(bytes('5', (-20)*AZIMUTH))
+                data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
+                print(data)
+                ser.write(data.encode())
+                time.sleep(0.1)
+                print(f"Rotate Counter-Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
             # Rerun to check Azimuth disalignment
             temp, AZIMUTH = itorch.main()
 
@@ -748,8 +724,6 @@ def set_launch():
             ser.write(data.encode())
             time.sleep(0.1)
 
-
-
         #CHANGING LAUNCH ANGLE
         THETA_DEGREES = slider_launch_angle.value
        
@@ -759,11 +733,9 @@ def set_launch():
         time.sleep(0.1)
         while True:
             # Read a line of data from the Arduino
-            print("here1")
             line = ser.readline().decode().strip()
             print(line)
             if line:
-                print("here2")
                 # Assuming the data format is "Angle: value"
                 if line.startswith("Angle:"):
                     y_value = float(line.split(":")[1])
@@ -772,7 +744,8 @@ def set_launch():
 
         y_value = 90 - y_value
         THETA_DEGREES = THETA_DEGREES - int(round(y_value))
-        theta_stepSend = THETA_DEGREES / .005
+        print("THETA DEGREES" + str(THETA_DEGREES))
+        theta_stepSend = THETA_DEGREES / .0009
         data = f"{1}{' '}{theta_stepSend}\n"
         print(data)
         ser.write(data.encode())
@@ -814,6 +787,7 @@ def abort_launch():
             # Assuming the data format is "Angle: value"
             if line.startswith("Angle:"):
                 y_value = float(line.split(":")[1])
+                y_value = 90 - y_value
                 print(f"Angle: {y_value}")
                 break
 
@@ -887,8 +861,8 @@ def update_timer():
     COUNTDOWN -= 1
     clock_dis.value = str(COUNTDOWN)
 
-    if COUNTDOWN == 2:
-        run_flywheel_motors()
+    # if COUNTDOWN == 2:
+    #     run_flywheel_motors()
 
     if COUNTDOWN == 0:
         launch()
@@ -941,8 +915,8 @@ def calculate_velocity(rW, rB, wC, wA):
 # Initialize the video capture
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-cap.set(3, 3840)
-cap.set(4, 2160)
+cap.set(3, 1280)
+cap.set(4, 720)
 
 # Create the main application window
 app = App(title="Hoopster", layout="grid", bg="#2b2b2b", width=1920, height=1080)
@@ -1062,10 +1036,6 @@ dummy_button4 = PushButton(box3, text="Shot Calibration", image="GUI/Calibration
 dummy_padding4 = Picture(box3, grid=[4, 1], width=0, height=0)
 dummy_button4.bg = "white"
 
-# dummy1 = Text(row7, grid=[0, 0], text="", align="left", bg="#2b2b2b", color="#c0c0c0")
-# dummy2 = Text(row8, grid=[0, 0], text="", align="left", bg="#2b2b2b", color="#c0c0c0")
-# dummy3 = Text(row9, grid=[0, 0], text="", align="left", bg="#2b2b2b", color="#c0c0c0")
-
 title_lab = Text(row7, grid=[0, 0], text="Parameters", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
 dis_lab = Text(row8, grid=[0, 0], text="Distance: ", align="left", color="#c0c0c0", bg="#2b2b2b")
 disx_lab = Text(row9, grid=[0, 0], text="X-Axis Distance: ", align="left", color="#c0c0c0", bg="#2b2b2b")
@@ -1080,7 +1050,6 @@ rpm1Cal_lab = Text(row18, grid=[0, 0], text="RPM Front Wheels: +0.0m/s", align="
 rpm2Cal_lab = Text(row19, grid=[0, 0], text="RPM Rear Wheels: +0.0m/s", align="left", color="#c0c0c0", bg="#2b2b2b")
 azimuthCal_lab = Text(row20, grid=[0, 0], text="Azimuth: +0.0°", align="left", color="#c0c0c0", bg="#2b2b2b")
 
-
 stats = Text(box4, grid=[0, 0], text="Statistics", align="top", size=39, color="#ff8c00", font="Arial Black", bg="#2b2b2b")
 successes = Text(box4, grid=[0, 1], text="Successes: " + str(SUCCESS), align="left", color="#c0c0c0", bg="#2b2b2b")
 failures = Text(box4, grid=[0, 2], text="Failures: " + str(FAILURE), align="left", color="#c0c0c0", bg="#2b2b2b")
@@ -1089,10 +1058,6 @@ reset_button = PushButton(box4, grid=[0, 5], image="GUI/ResetButton.png", text="
 
 # Repeat function calls
 app.repeat(1000, detect_anomaly)
-
-# app.repeat(1000, set_manual_launch)
-
-#app.repeat()
 
 # Close the app
 app.when_closed = on_closed
