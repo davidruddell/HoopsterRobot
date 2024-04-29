@@ -58,7 +58,7 @@ MANUAL_BOX_EXISTS = False
 BACKGROUND_COLOR = "#2b2b2b"
 SLIDER_MAX_RPM = 1000
 SLIDER_MAX_AZIMUTH = 180
-SLIDER_MAX_LAUNCH_ANGLE = 73
+SLIDER_MAX_LAUNCH_ANGLE = 69
 SLIDER_COLOR = "#4da6ff"
 SLIDER_HANDLE_COLOR = "#ffffff"
 
@@ -149,7 +149,6 @@ def run_mobility_menu():
     finally:
         app.show()
 
-
 def run_manual_shot_menu():
     global TRAJ_BOX_EXISTS, CAL_BOX_EXISTS, MANUAL_BOX_EXISTS, AUTO_SHOT, cal_box, graph_box, man_box, slider_rpm1, slider_rpm2, slider_azimuth, slider_launch_angle
     AUTO_SHOT = False
@@ -200,7 +199,7 @@ def run_manual_shot_menu():
             if launch_angle_value.value:
                 slider_launch_angle.value = int(launch_angle_value.value)
             else:
-                slider_launch_angle.value = 66.0
+                slider_launch_angle.value = 65.0
 
             xdistance = update_graph()
             change_parameters(xdistance)
@@ -348,7 +347,7 @@ def run_manual_shot_menu():
             align="right"
         )
         slider_launch_angle.text_color=BACKGROUND_COLOR
-        slider_launch_angle.value=66.0
+        slider_launch_angle.value=65.0
 
 
         graph_box = Box(man_box, layout="grid", grid=[1, 0], width=1, height=1, align="right")
@@ -567,6 +566,8 @@ def apply_cal_press():
     rpm1Cal_lab.append("RPM Front Wheels: " + str(cal_symbol(RPM1_CAL)) + str(RPM1_CAL))
     rpm2Cal_lab.append("RPM Rear Wheels: " + str(cal_symbol(RPM2_CAL)) + str(RPM2_CAL))
     azimuthCal_lab.append("Azimuth: " + str(cal_symbol(AZIMUTH_CAL))  + str(AZIMUTH_CAL) + "°")
+
+
 
     CAL_BOX_EXISTS = False
 
