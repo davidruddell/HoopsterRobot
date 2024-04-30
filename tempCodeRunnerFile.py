@@ -1,1 +1,1 @@
-y_value
+HYPOTENUSE

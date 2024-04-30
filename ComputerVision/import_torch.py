@@ -275,7 +275,7 @@ def main():
         #angle_between_points = calculate_angle_between_points(hoop_center_x, camera_fov_degrees_h, distance_to_rim, sensor_width_mm, sensor_height_mm)
         #print(f"The angle between the two points is approximately {angle_between_points:.2f} degrees.")
         print(distance_to_rim)
-        return distance_to_rim, hoop_center_x
+        return distance_to_rim#, hoop_center_x
     else:
         # print("hitdaelse")
         return -1

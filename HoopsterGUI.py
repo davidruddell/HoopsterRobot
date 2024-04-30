@@ -17,15 +17,15 @@ import serial.tools.list_ports as port_list
 
 
 # Prints a list of available serial ports.
-ports = list(port_list.comports())
-for port in ports:
-    print(port.device)
+# ports = list(port_list.comports())
+# for port in ports:
+#     print(port.device)
 
-try:
-    ser = serial.Serial('/dev/cu.usbmodem11201', 115200)
-    print(f"Successfully connected to port {ser.port}.")
-except:
-    print(f"Error connecting to port: {e}")
+# try:
+#     ser = serial.Serial('/dev/cu.usbmodem11201', 115200)
+#     print(f"Successfully connected to port {ser.port}.")
+# except:
+#     print(f"Error connecting to port: {e}")
 
 # Global variables
 SUCCESS = 0
@@ -72,15 +72,15 @@ mobility_gui = None
 
 #global cap, live_feed
 
-def check_state(current_state):
-    global prev_state
-    if current_state is not None:
-        if (current_state != prev_state) or (current_state[0] == '2'):
-            data = f"{current_state[0]}{' '}{current_state[1]}\n"
-            print(data)
-            ser.write(data.encode())
-            time.sleep(0.1)
-        prev_state = current_state
+# def check_state(current_state):
+#     global prev_state
+#     if current_state is not None:
+#         if (current_state != prev_state) or (current_state[0] == '2'):
+#             data = f"{current_state[0]}{' '}{current_state[1]}\n"
+#             print(data)
+#             ser.write(data.encode())
+#             time.sleep(0.1)
+#         prev_state = current_state
 
 def timer(func):
     def wrapper(*args, **kwargs):
@@ -620,25 +620,23 @@ def set_launch():
 
     #AUTO SHOT SEQUENCE
     if (AUTO_SHOT == True):
-        temp, AZIMUTH = itorch.main()
-        while (abs(AZIMUTH) > 5): #while we are not within 5 pixels of center
-            # Assume 20 steps per pixel
-            if (AZIMUTH > 0):
-                data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
-                print(data)
-                ser.write(data.encode())
-                time.sleep(0.1)
-                print(f"Rotate Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
-                # ser.write(bytes('5', 20*AZIMUTH))
-            else:
-                data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
-                print(data)
-                ser.write(data.encode())
-                time.sleep(0.1)
-                print(f"Rotate Counter-Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
-            # Rerun to check Azimuth disalignment
-            temp, AZIMUTH = itorch.main()
-
+        # temp, AZIMUTH = itorch.main()
+        # while (abs(AZIMUTH) > 5): #while we are not within 5 pixels of center
+        #     # Assume 20 steps per pixel
+        #     if (AZIMUTH > 0):
+        #         data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
+        #         print(data)
+        #         ser.write(data.encode())
+        #         time.sleep(0.1)
+        #         print(f"Rotate Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
+        #         # ser.write(bytes('5', 20*AZIMUTH))
+        #     else:
+        #         data = f"{5}{' '}{STEPS_PER_PIXEL*AZIMUTH}\n"
+        #         print(data)
+        #         ser.write(data.encode())
+        #         time.sleep(0.1)
+        #         print(f"Rotate Counter-Clockwise {STEPS_PER_PIXEL*abs(AZIMUTH)} steps")
+        #     # Rerun to check Azimuth disalignment
 
         (result, X_GOAL, HYPOTENUSE, RPM) = cvMain.main()
 
@@ -710,47 +708,47 @@ def set_launch():
         AZIMUTH = (slider_azimuth.value) / .0113
         #.0113 is a value we calibrated for degrees per step
 
-        if (AZIMUTH > 0):
-            AZIMUTH = round(AZIMUTH)
-            print(f"Rotate Clockwise {AZIMUTH} steps")
-            data = f"{5}{' '}{AZIMUTH}\n"
-            print(data)
-            ser.write(data.encode())
-            time.sleep(0.1)
-        else:
-            AZIMUTH = round(AZIMUTH)
-            print(f"Rotate Counter-Clockwise {AZIMUTH} steps")
-            data = f"{5}{' '}{AZIMUTH}\n"
-            print(data)
-            ser.write(data.encode())
-            time.sleep(0.1)
+        # if (AZIMUTH > 0):
+        #     AZIMUTH = round(AZIMUTH)
+        #     print(f"Rotate Clockwise {AZIMUTH} steps")
+        #     data = f"{5}{' '}{AZIMUTH}\n"
+        #     print(data)
+        #     ser.write(data.encode())
+        #     time.sleep(0.1)
+        # else:
+        #     AZIMUTH = round(AZIMUTH)
+        #     print(f"Rotate Counter-Clockwise {AZIMUTH} steps")
+        #     data = f"{5}{' '}{AZIMUTH}\n"
+        #     print(data)
+        #     ser.write(data.encode())
+        #     time.sleep(0.1)
 
         #CHANGING LAUNCH ANGLE
         THETA_DEGREES = slider_launch_angle.value
        
         #REQUEST CURRENT LAUNCH ANGLE
-        data = f"{6}{' '}\n"
-        ser.write(data.encode())
-        time.sleep(0.1)
-        while True:
-            # Read a line of data from the Arduino
-            line = ser.readline().decode().strip()
-            print(line)
-            if line:
-                # Assuming the data format is "Angle: value"
-                if line.startswith("Angle:"):
-                    y_value = float(line.split(":")[1])
-                    print(f"Angle: {y_value}")
-                    break
+        # data = f"{6}{' '}\n"
+        # ser.write(data.encode())
+        # time.sleep(0.1)
+        # while True:
+        #     # Read a line of data from the Arduino
+        #     line = ser.readline().decode().strip()
+        #     print(line)
+        #     if line:
+        #         # Assuming the data format is "Angle: value"
+        #         if line.startswith("Angle:"):
+        #             y_value = float(line.split(":")[1])
+        #             print(f"Angle: {y_value}")
+        #             break
 
-        y_value = 90 - y_value
-        THETA_DEGREES = THETA_DEGREES - int(round(y_value))
-        print("THETA DEGREES" + str(THETA_DEGREES))
-        theta_stepSend = THETA_DEGREES / .0009
-        data = f"{1}{' '}{theta_stepSend}\n"
-        print(data)
-        ser.write(data.encode())
-        time.sleep(0.1)
+        # y_value = 90 - y_value
+        # THETA_DEGREES = THETA_DEGREES - int(round(y_value))
+        # print("THETA DEGREES" + str(THETA_DEGREES))
+        # theta_stepSend = THETA_DEGREES / .0009
+        # data = f"{1}{' '}{theta_stepSend}\n"
+        # print(data)
+        # ser.write(data.encode())
+        # time.sleep(0.1)
 
         RPM[0] = slider_rpm1.value
         RPM[1] = slider_rpm2.value
@@ -775,22 +773,22 @@ def abort_launch():
         print("Launch Aborted.")
 
 
-    data = f"{6}{' '}\n"
-    ser.write(data.encode())
-    time.sleep(0.1)
-    while True:
-        # Read a line of data from the Arduino
-        print("here1")
-        line = ser.readline().decode().strip()
-        print(line)
-        if line:
-            print("here2")
-            # Assuming the data format is "Angle: value"
-            if line.startswith("Angle:"):
-                y_value = float(line.split(":")[1])
-                y_value = 90 - y_value
-                print(f"Angle: {y_value}")
-                break
+    # data = f"{6}{' '}\n"
+    # ser.write(data.encode())
+    # time.sleep(0.1)
+    # while True:
+    #     # Read a line of data from the Arduino
+    #     print("here1")
+    #     line = ser.readline().decode().strip()
+    #     print(line)
+    #     if line:
+    #         print("here2")
+    #         # Assuming the data format is "Angle: value"
+    #         if line.startswith("Angle:"):
+    #             y_value = float(line.split(":")[1])
+    #             y_value = 90 - y_value
+    #             print(f"Angle: {y_value}")
+    #             break
 
     dis_lab.clear()
     disx_lab.clear()
@@ -819,11 +817,11 @@ def abort_launch():
 def abort_countdown():
     global COUNTDOWN
 
-    #CANCEL MOTORS
-    data = f"{3}{' '}\n"
-    print(data)
-    ser.write(data.encode())
-    time.sleep(0.1)
+    # #CANCEL MOTORS
+    # data = f"{3}{' '}\n"
+    # print(data)
+    # ser.write(data.encode())
+    # time.sleep(0.1)
 
     app.cancel(update_timer)
     app.show()
@@ -874,27 +872,27 @@ def update_timer():
         launched_window.show()
         countdown_window.hide()
 
-def run_flywheel_motors():
-    global RPM
+# def run_flywheel_motors():
+#     global RPM
 
-    #move rpm1 front wheels
-    data = f"{8}{' '}{RPM[0]}\n"
-    print(data)
-    ser.write(data.encode())
-    time.sleep(0.1)
+#     #move rpm1 front wheels
+#     data = f"{8}{' '}{RPM[0]}\n"
+#     print(data)
+#     ser.write(data.encode())
+#     time.sleep(0.1)
 
-    #move rpm2 back wheels
-    data = f"{9}{' '}{RPM[1]}\n"
-    print(data)
-    ser.write(data.encode())
-    time.sleep(0.1)
+#     #move rpm2 back wheels
+#     data = f"{9}{' '}{RPM[1]}\n"
+#     print(data)
+#     ser.write(data.encode())
+#     time.sleep(0.1)
 
-def run_ball_delivery_system():
-    #move ball delivery system
-    data = f"{3}{' '}\n"
-    print(data)
-    ser.write(data.encode())
-    time.sleep(0.1)
+# def run_ball_delivery_system():
+#     #move ball delivery system
+#     data = f"{3}{' '}\n"
+#     print(data)
+#     ser.write(data.encode())
+#     time.sleep(0.1)
 
 
 # Function to update the statistics display
